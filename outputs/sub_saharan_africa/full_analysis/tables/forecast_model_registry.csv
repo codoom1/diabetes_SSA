@@ -1,0 +1,5 @@
+model,status,primary_use
+Log-linear trend,Implemented,Average annual percentage change over 1990-2023
+ARIMA,Implemented,Short-term age-standardized rate forecasting
+ETS,Implemented,Short-term age-standardized rate forecasting
+LSTM,Implemented and fitted for headline comparison,Machine-learning forecast candidate for nonlinear temporal patterns

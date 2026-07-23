@@ -1,0 +1,28 @@
+# R and RStudio local state
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Renviron
+.Rprofile
+
+# Restricted or locally generated datasets
+data/processed/
+data/*.zip
+data/*.csv
+data/*.csv.gz
+
+# Render intermediates and operating-system files
+reports/*.log
+reports/*.aux
+reports/*.out
+reports/*.tex
+reports/*_files/
+docs/saudi_arabia/*.pdf
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~

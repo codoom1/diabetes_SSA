@@ -1,0 +1,1769 @@
+---
+title: "Sub-Saharan Africa Diabetes Burden Analysis"
+subtitle: "GBD 2023 regional and subregional trends, forecasts, and burden composition"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+    fig_caption: true
+    latex_engine: xelatex
+geometry: margin=0.75in
+fontsize: 9pt
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{float}
+  - \usepackage{array}
+---
+
+```{r setup, include=FALSE}
+# Resolve the project root so the report can be rendered from the reports folder.
+project_root <- normalizePath("..")
+
+# Make all relative paths resolve from the project root during rendering.
+knitr::opts_knit$set(root.dir = project_root)
+
+# Hide code in the PDF while keeping source chunks commented and readable.
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.pos = "H")
+
+# Load only the packages required directly in this report.
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(forecast)
+  library(ggplot2)
+  library(knitr)
+  library(readr)
+  library(scales)
+  library(tidyr)
+})
+
+# Shared cleaning, validation, forecasting, and plotting helpers.
+source(file.path(project_root, "scripts/common/report_helpers.R"))
+```
+
+```{r paths-and-constants, include=FALSE}
+
+# Create output directories for machine-readable tables and publication figures.
+output_dir <- file.path(project_root, "outputs/sub_saharan_africa/full_analysis")
+table_dir <- file.path(output_dir, "tables")
+figure_dir <- file.path(output_dir, "figures")
+dir.create(table_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
+
+# Store all input paths in one object so the availability table and readers agree.
+paths <- list(
+  rates = file.path(project_root, "data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_age_standardized_rates_1990_2023.csv"),
+  counts = file.path(project_root, "data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_all_age_counts_1990_2023.csv"),
+  age_counts = file.path(project_root, "data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_age_specific_counts_1990_2023.csv"),
+  age_rates = file.path(project_root, "data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_age_specific_rates_1990_2023.csv"),
+  population = file.path(project_root, "data/raw/un_wpp_2024/WPP2024_PopulationByAge5GroupSex_Medium.csv.gz")
+)
+
+# Fixed region order used in tables, legends, and facets.
+locations <- c(
+  "Sub-Saharan Africa",
+  "Central Sub-Saharan Africa",
+  "Eastern Sub-Saharan Africa",
+  "Southern Sub-Saharan Africa",
+  "Western Sub-Saharan Africa"
+)
+
+# Fixed cause and sex orders keep outputs stable between renders.
+cause_levels <- c("Diabetes mellitus", "Diabetes mellitus type 1", "Diabetes mellitus type 2")
+sex_levels <- c("Male", "Female", "Both")
+
+# Convert long GBD measure names to compact plotting labels.
+measure_short_df <- tibble(
+  measure_name = names(measure_short),
+  measure = unname(measure_short)
+)
+
+# Use an accessible, multi-hue palette for regional comparisons.
+region_palette <- c(
+  "Sub-Saharan Africa" = "#111111",
+  "Central Sub-Saharan Africa" = "#0072B2",
+  "Eastern Sub-Saharan Africa" = "#009E73",
+  "Southern Sub-Saharan Africa" = "#D55E00",
+  "Western Sub-Saharan Africa" = "#CC79A7"
+)
+
+# A compact paper theme shared by all ggplot figures in the report.
+paper_theme <- function(base_size = 8) {
+  theme_minimal(base_size = base_size) +
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      strip.text = element_text(face = "bold", size = base_size),
+      axis.title = element_text(size = base_size),
+      axis.text = element_text(size = base_size - 1),
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      plot.caption = element_text(size = base_size - 1)
+    )
+}
+
+# Preserve decimals for small rates such as T1DM incidence and deaths.
+rate_axis_labels <- function(x) {
+  ifelse(abs(x) < 10, sprintf("%.1f", x), comma(x, accuracy = 1))
+}
+```
+
+
+```{r helper-functions, include=FALSE}
+read_stage2 <- function(path, expected_age, expected_metric) {
+  # Missing optional files return NULL so pending sections can remain in place.
+  if (!file.exists(path)) return(NULL)
+
+  # Read the requested GBD extract and retain the 1990-2023 analysis window.
+  data <- read_csv(path, show_col_types = FALSE) %>%
+    filter(year %in% 1990:2023)
+
+  # Fail early if the extract is not shaped like a GBD stage-2 file.
+  missing_columns <- setdiff(required_gbd_columns, names(data))
+  if (length(missing_columns) > 0) {
+    stop("Missing required columns in ", path, ": ", paste(missing_columns, collapse = ", "))
+  }
+
+  # Validate dimensions, year coverage, uniqueness, missingness, and UI bounds.
+  key <- c("measure_id", "location_id", "sex_id", "age_id", "cause_id", "metric_id", "year")
+  checks <- c(
+    expected_locations = setequal(data$location_name, locations),
+    expected_age = setequal(data$age_name, expected_age),
+    expected_metric = identical(unique(data$metric_name), expected_metric),
+    complete_years = setequal(data$year, 1990:2023),
+    expected_sexes = setequal(data$sex_name, sex_levels),
+    expected_causes = setequal(data$cause_name, cause_levels),
+    no_duplicate_keys = !anyDuplicated(data[key]),
+    no_missing_values = !anyNA(data[required_gbd_columns]),
+    valid_bounds = all(data$lower <= data$val & data$val <= data$upper)
+  )
+  if (!all(checks)) {
+    stop("Input validation failed for ", path, ": ", paste(names(checks)[!checks], collapse = ", "))
+  }
+
+  # Return a validated analysis-ready data frame.
+  data
+}
+```
+
+```{r read-inputs, include=FALSE}
+# Age-standardized rates drive trend, comparison, and forecast analyses.
+rates <- read_stage2(paths$rates, "Age-standardized", "Rate")
+
+# All-age counts support absolute-burden and composition analyses.
+counts <- read_stage2(paths$counts, "All ages", "Number")
+
+# Age-specific counts are available for quality checks and future decomposition.
+age_counts <- read_stage2(paths$age_counts, c(
+  "0-6 days", "7-27 days", "1-5 months", "6-11 months", "12-23 months",
+  "2-4 years", "5-9 years", "10-14 years", "15-19 years", "20-24 years",
+  "25-29 years", "30-34 years", "35-39 years", "40-44 years", "45-49 years",
+  "50-54 years", "55-59 years", "60-64 years", "65-69 years", "70-74 years",
+  "75-79 years", "80-84 years", "85-89 years", "90-94 years", "95+ years"
+), "Number")
+
+# Age-specific rates are required for the completed Stage 2 analysis.
+age_rates <- read_stage2(paths$age_rates, c(
+  "0-6 days", "7-27 days", "1-5 months", "6-11 months", "12-23 months",
+  "2-4 years", "5-9 years", "10-14 years", "15-19 years", "20-24 years",
+  "25-29 years", "30-34 years", "35-39 years", "40-44 years", "45-49 years",
+  "50-54 years", "55-59 years", "60-64 years", "65-69 years", "70-74 years",
+  "75-79 years", "80-84 years", "85-89 years", "90-94 years", "95+ years"
+), "Rate")
+
+# All four GBD inputs are required for the completed report to render safely.
+if (is.null(rates) || is.null(counts) || is.null(age_counts) || is.null(age_rates)) {
+  stop("This report requires age-standardized rates, all-age counts, age-specific counts, and age-specific rates.")
+}
+```
+
+```{r input-availability, include=FALSE}
+# Summarise which analyses are currently enabled by the available files.
+availability <- tibble(
+  input = c(
+    "Age-standardized rates", "All-age counts", "Age-specific counts",
+    "Age-specific rates", "UN WPP 2024 population"
+  ),
+  file = unlist(paths, use.names = FALSE),
+  status = c(
+    "AVAILABLE",
+    "AVAILABLE",
+    "AVAILABLE",
+    "AVAILABLE",
+    if (file.exists(paths$population)) "AVAILABLE" else "MISSING"
+  ),
+  enabled_analysis = c(
+    "Endpoints, trends, sex ratios, forecasts",
+    "Count endpoints, diabetes-type shares, YLL-to-YLD ratios",
+    "Age-specific count validation and readiness for decomposition",
+    "GBD-consistent decomposition, rate-effect estimation, age-period-cohort analysis",
+    "Demographic-only projections and population sensitivity analysis"
+  )
+)
+
+lstm_status <- lstm_backend_status()
+
+# Register all forecast model families and whether they are active in this render.
+model_registry <- tibble(
+  model = c("Log-linear trend", "ARIMA", "ETS", "LSTM"),
+  status = c(
+    "Implemented",
+    "Implemented",
+    "Implemented",
+    if (lstm_status$lstm_available) "Implemented and fitted for headline comparison" else "Specified; backend pending"
+  ),
+  primary_use = c(
+    "Average annual percentage change over 1990-2023",
+    "Short-term age-standardized rate forecasting",
+    "Short-term age-standardized rate forecasting",
+    "Machine-learning forecast candidate for nonlinear temporal patterns"
+  )
+)
+```
+
+```{r summary-helper-functions, include=FALSE}
+endpoint_by_location <- function(data) {
+  # Produce 1990 and 2023 endpoints separately for each location.
+  data %>%
+    group_by(location_name) %>%
+    group_modify(~ endpoint_summary(.x)) %>%
+    ungroup()
+}
+
+trend_by_location <- function(data) {
+  # Estimate log-linear APC trends separately for each location.
+  data %>%
+    group_by(location_name) %>%
+    group_modify(~ log_linear_trends(.x)) %>%
+    ungroup()
+}
+
+forecast_by_location <- function(data) {
+  # Run ARIMA/ETS expanding-window validation and selected-model forecasts.
+  data %>%
+    group_by(location_name) %>%
+    group_map(~ {
+      result <- generate_rate_forecasts(.x)
+      list(
+        forecasts = result$forecasts %>% mutate(location_name = .y$location_name),
+        accuracy = result$accuracy %>% mutate(location_name = .y$location_name)
+      )
+    })
+}
+
+# Average marginal contributions over all six factor orderings. This is the
+# symmetric (Shapley) decomposition for population size, age structure, and
+# age-specific rate.
+decompose_three_factors <- function(data) {
+  p <- data %>% distinct(year, age_id, population) %>%
+    arrange(year, age_id) %>%
+    group_by(year) %>%
+    mutate(total_population = sum(population), age_share = population / total_population) %>%
+    ungroup()
+  r <- data %>% select(year, age_id, rate = val) %>% arrange(year, age_id)
+  x <- left_join(p, r, by = c("year", "age_id"))
+  n <- setNames(x %>% distinct(year, total_population) %>% pull(total_population),
+                x %>% distinct(year, total_population) %>% pull(year))
+  shares <- split(x$age_share, x$year)
+  rates_by_year <- split(x$rate, x$year)
+  value <- function(state) {
+    size_year <- if (state[["size"]]) "2023" else "1990"
+    structure_year <- if (state[["structure"]]) "2023" else "1990"
+    rate_year <- if (state[["rate"]]) "2023" else "1990"
+    n[[size_year]] * sum(shares[[structure_year]] * rates_by_year[[rate_year]]) / 1e5
+  }
+  permutations <- list(
+    c("size", "structure", "rate"), c("size", "rate", "structure"),
+    c("structure", "size", "rate"), c("structure", "rate", "size"),
+    c("rate", "size", "structure"), c("rate", "structure", "size")
+  )
+  contributions <- lapply(permutations, function(ordering) {
+    state <- c(size = FALSE, structure = FALSE, rate = FALSE)
+    out <- c(size = 0, structure = 0, rate = 0)
+    previous <- value(state)
+    for (factor_name in ordering) {
+      state[[factor_name]] <- TRUE
+      current <- value(state)
+      out[[factor_name]] <- current - previous
+      previous <- current
+    }
+    out
+  })
+  effects <- rowMeans(do.call(cbind, contributions))
+  baseline <- value(c(size = FALSE, structure = FALSE, rate = FALSE))
+  endpoint <- value(c(size = TRUE, structure = TRUE, rate = TRUE))
+  tibble(
+    count_1990_reconstructed = baseline,
+    count_2023_reconstructed = endpoint,
+    observed_change = endpoint - baseline,
+    population_size_effect = effects[["size"]],
+    age_structure_effect = effects[["structure"]],
+    age_specific_rate_effect = effects[["rate"]],
+    decomposition_error = sum(effects) - (endpoint - baseline)
+  )
+}
+```
+
+
+
+```{r primary-summaries, include=FALSE}
+# Endpoint tables describe baseline, latest value, and percentage change.
+rate_endpoints <- endpoint_by_location(rates)
+count_endpoints <- endpoint_by_location(counts)
+
+# Trend models provide interpretable APC estimates for every stratum.
+rate_trends <- trend_by_location(rates)
+
+# Forecast helpers return both projected values and validation metrics.
+rate_forecast_parts <- forecast_by_location(rates)
+rate_forecasts <- bind_rows(lapply(rate_forecast_parts, `[[`, "forecasts")) %>%
+  relocate(location_name)
+forecast_accuracy <- bind_rows(lapply(rate_forecast_parts, `[[`, "accuracy")) %>%
+  relocate(location_name)
+
+# Run the fitted headline ARIMA/ETS/LSTM comparison.
+headline_model_comparison <- compare_headline_forecast_models(rates)
+headline_model_accuracy <- headline_model_comparison$accuracy
+headline_model_errors <- headline_model_comparison$errors
+headline_selected_forecasts <- generate_headline_selected_forecasts(
+  rates,
+  headline_model_accuracy,
+  headline_model_errors
+)
+```
+
+```{r secondary-summaries, include=FALSE}
+# Compare male and female age-standardized rates by year and measure.
+sex_ratios <- rates %>%
+  group_by(location_name) %>%
+  group_modify(~ sex_rate_ratios(.x)) %>%
+  ungroup()
+
+# Estimate the contribution of T1DM and T2DM to all-age diabetes burden.
+type_shares <- counts %>%
+  group_by(location_name) %>%
+  group_modify(~ diabetes_type_shares(.x)) %>%
+  ungroup()
+
+# YLL:YLD ratios show whether fatal or non-fatal burden dominates.
+yll_yld_ratios <- counts %>%
+  group_by(location_name) %>%
+  group_modify(~ yll_yld_ratio(.x)) %>%
+  ungroup()
+
+# Smooth YLL:YLD ratios into interpretable calendar periods.
+period_ratios <- yll_yld_ratios %>%
+  mutate(
+    period = case_when(
+      year <= 1994 ~ "1990-1994",
+      year <= 1999 ~ "1995-1999",
+      year <= 2004 ~ "2000-2004",
+      year <= 2009 ~ "2005-2009",
+      year <= 2014 ~ "2010-2014",
+      year <= 2019 ~ "2015-2019",
+      TRUE ~ "2020-2023"
+    )
+  ) %>%
+  group_by(location_name, period) %>%
+  summarise(yll_to_yld_ratio = mean(yll_to_yld_ratio), .groups = "drop")
+
+# Confirm that age-specific count strata contain the expected dimensions.
+age_count_qc <- age_counts %>%
+  group_by(location_name, sex_name) %>%
+  summarise(
+    rows = n(),
+    measures = n_distinct(measure_name),
+    causes = n_distinct(cause_name),
+    ages = n_distinct(age_name),
+    years = n_distinct(year),
+    .groups = "drop"
+  )
+
+# Match counts and rates to reconstruct GBD-implied demographic denominators.
+age_population_candidates <- age_counts %>%
+  select(location_id, location_name, sex_id, sex_name, age_id, age_name,
+         cause_id, measure_id, year, count = val) %>%
+  inner_join(
+    age_rates %>% select(location_id, sex_id, age_id, cause_id, measure_id,
+                         year, rate = val),
+    by = c("location_id", "sex_id", "age_id", "cause_id", "measure_id", "year")
+  ) %>%
+  filter(rate > 0) %>%
+  mutate(implied_population = count / rate * 1e5)
+
+age_population <- age_population_candidates %>%
+  group_by(location_id, location_name, sex_id, sex_name, age_id, age_name, year) %>%
+  summarise(
+    population = median(implied_population),
+    denominator_estimates = n(),
+    max_relative_spread = if_else(
+      population > 0,
+      max(abs(implied_population - population) / population),
+      0
+    ),
+    .groups = "drop"
+  )
+
+population_qc <- age_population %>%
+  summarise(
+    demographic_cells = n(),
+    cells_with_denominator = sum(denominator_estimates > 0),
+    maximum_relative_spread = max(max_relative_spread),
+    median_relative_spread = median(max_relative_spread)
+  )
+
+# Symmetric decomposition for every region, sex, cause, and measure.
+decomposition_data <- age_rates %>%
+  filter(year %in% c(1990, 2023)) %>%
+  inner_join(
+    age_population %>% select(location_id, sex_id, age_id, year, population),
+    by = c("location_id", "sex_id", "age_id", "year")
+  )
+
+symmetric_decomposition <- decomposition_data %>%
+  group_by(location_name, sex_name, cause_name, measure_name) %>%
+  group_modify(~ decompose_three_factors(.x)) %>%
+  ungroup() %>%
+  mutate(
+    population_size_pct = 100 * population_size_effect / observed_change,
+    age_structure_pct = 100 * age_structure_effect / observed_change,
+    age_specific_rate_pct = 100 * age_specific_rate_effect / observed_change
+  )
+
+# Age-specific endpoints and log-linear changes provide directly interpretable
+# age patterns without imposing an unidentified full APC parameterization.
+age_specific_endpoints <- age_rates %>%
+  filter(year %in% c(1990, 2023)) %>%
+  select(location_name, sex_name, cause_name, measure_name, age_id, age_name,
+         year, val) %>%
+  pivot_wider(names_from = year, values_from = val, names_prefix = "rate_") %>%
+  mutate(
+    absolute_change = rate_2023 - rate_1990,
+    relative_change_pct = if_else(rate_1990 > 0, 100 * (rate_2023 / rate_1990 - 1), NA_real_)
+  )
+
+# Estimate age-adjusted net drift for incidence and mortality. This is a
+# constrained age-period trend model, not a full identifiable APC model.
+age_adjusted_drift <- age_counts %>%
+  filter(measure_name %in% c("Incidence", "Deaths")) %>%
+  inner_join(
+    age_population %>% select(location_id, sex_id, age_id, year, population),
+    by = c("location_id", "sex_id", "age_id", "year")
+  ) %>%
+  filter(population > 0, val >= 0) %>%
+  group_by(location_name, sex_name, cause_name, measure_name) %>%
+  group_modify(~ {
+    fit <- glm(val ~ factor(age_id) + year, offset = log(population),
+               family = quasipoisson(link = "log"), data = .x)
+    coefficient <- coef(summary(fit))["year", ]
+    tibble(
+      annual_drift_pct = 100 * (exp(coefficient[["Estimate"]]) - 1),
+      lower_95 = 100 * (exp(coefficient[["Estimate"]] - 1.96 * coefficient[["Std. Error"]]) - 1),
+      upper_95 = 100 * (exp(coefficient[["Estimate"]] + 1.96 * coefficient[["Std. Error"]]) - 1),
+      p_value = coefficient[["Pr(>|t|)"]]
+    )
+  }) %>%
+  ungroup()
+```
+
+
+
+```{r forecast-diagnostics, include=FALSE}
+# Restrict diagnostics to the headline overall SSA, both-sexes, total diabetes series.
+headline_series <- rates %>%
+  filter(
+    location_name == "Sub-Saharan Africa",
+    cause_name == "Diabetes mellitus",
+    sex_name == "Both"
+  ) %>%
+  arrange(factor(measure_name, levels = measure_levels), year)
+
+# Calculate trailing means to show medium-term direction without removing raw series.
+trailing_mean_data <- headline_series %>%
+  group_by(measure_name) %>%
+  arrange(year, .by_group = TRUE) %>%
+  mutate(trailing_mean_5yr = zoo::rollmean(val, k = 5, fill = NA, align = "right")) %>%
+  ungroup()
+
+# Compare differencing suggestions and the order chosen by auto.arima().
+stationarity_checks <- headline_series %>%
+  group_by(measure_name) %>%
+  group_modify(~ {
+    y <- ts(.x$val, start = min(.x$year), frequency = 1)
+    fit <- auto.arima(y)
+    tibble(
+      kpss_ndiffs = ndiffs(y, test = "kpss"),
+      adf_ndiffs = ndiffs(y, test = "adf"),
+      pp_ndiffs = ndiffs(y, test = "pp"),
+      auto_arima_p = arimaorder(fit)[["p"]],
+      auto_arima_d = arimaorder(fit)[["d"]],
+      auto_arima_q = arimaorder(fit)[["q"]],
+      selected_arima = paste0(
+        "ARIMA(",
+        arimaorder(fit)[["p"]], ",",
+        arimaorder(fit)[["d"]], ",",
+        arimaorder(fit)[["q"]], ")"
+      )
+    )
+  }) %>%
+  ungroup() %>%
+  mutate(Measure = recode(measure_name, !!!measure_short)) %>%
+  select(Measure, everything(), -measure_name)
+
+# Extract ACF/PACF values in data-frame form for a consistent ggplot layout.
+acf_pacf_data <- headline_series %>%
+  group_by(measure_name) %>%
+  group_modify(~ {
+    y <- ts(.x$val, start = min(.x$year), frequency = 1)
+    acf_values <- acf(y, plot = FALSE, lag.max = 12)
+    pacf_values <- pacf(y, plot = FALSE, lag.max = 12)
+    bind_rows(
+      tibble(
+        lag = as.integer(acf_values$lag[-1]),
+        value = as.numeric(acf_values$acf[-1]),
+        diagnostic = "ACF"
+      ),
+      tibble(
+        lag = as.integer(pacf_values$lag),
+        value = as.numeric(pacf_values$acf),
+        diagnostic = "PACF"
+      )
+    )
+  }) %>%
+  ungroup() %>%
+  left_join(measure_short_df, by = "measure_name") %>%
+  mutate(measure = factor(measure, levels = unname(measure_short)))
+```
+
+```{r write-derived-csvs, include=FALSE}
+# Write every derived table needed for reproducibility outside the PDF.
+write_csv(availability, file.path(table_dir, "input_availability.csv"))
+write_csv(rate_endpoints, file.path(table_dir, "age_standardized_rate_endpoints.csv"))
+write_csv(rate_trends, file.path(table_dir, "age_standardized_log_linear_trends.csv"))
+write_csv(rate_forecasts, file.path(table_dir, "age_standardized_rate_forecasts_2024_2030.csv"))
+write_csv(forecast_accuracy, file.path(table_dir, "forecast_model_accuracy.csv"))
+write_csv(count_endpoints, file.path(table_dir, "all_age_count_endpoints.csv"))
+write_csv(sex_ratios, file.path(table_dir, "sex_rate_ratios.csv"))
+write_csv(type_shares, file.path(table_dir, "diabetes_type_shares.csv"))
+write_csv(yll_yld_ratios, file.path(table_dir, "yll_to_yld_ratio_annual.csv"))
+write_csv(period_ratios, file.path(table_dir, "yll_to_yld_ratio_periods.csv"))
+write_csv(age_count_qc, file.path(table_dir, "age_specific_count_quality_summary.csv"))
+write_csv(model_registry, file.path(table_dir, "forecast_model_registry.csv"))
+write_csv(stationarity_checks, file.path(table_dir, "forecast_stationarity_checks.csv"))
+write_csv(acf_pacf_data, file.path(table_dir, "forecast_acf_pacf_values.csv"))
+write_csv(headline_model_accuracy, file.path(table_dir, "headline_forecast_model_comparison.csv"))
+write_csv(headline_model_errors, file.path(table_dir, "headline_forecast_model_validation_predictions.csv"))
+write_csv(headline_selected_forecasts, file.path(table_dir, "headline_selected_model_forecasts_2024_2030.csv"))
+write_csv(age_population, file.path(table_dir, "gbd_implied_age_sex_population_1990_2023.csv"))
+write_csv(population_qc, file.path(table_dir, "gbd_implied_population_validation.csv"))
+write_csv(symmetric_decomposition, file.path(table_dir, "symmetric_decomposition_1990_2023.csv"))
+write_csv(age_specific_endpoints, file.path(table_dir, "age_specific_rate_endpoints_1990_2023.csv"))
+write_csv(age_adjusted_drift, file.path(table_dir, "age_adjusted_incidence_mortality_drift.csv"))
+```
+
+```{r table-formatting-helpers, include=FALSE}
+clean_measure <- function(x) recode(x, !!!measure_short)
+clean_location <- function(x) recode(
+  x,
+  "Sub-Saharan Africa" = "SSA",
+  "Central Sub-Saharan Africa" = "Central SSA",
+  "Eastern Sub-Saharan Africa" = "Eastern SSA",
+  "Southern Sub-Saharan Africa" = "Southern SSA",
+  "Western Sub-Saharan Africa" = "Western SSA"
+)
+clean_cause <- function(x) recode(
+  x,
+  "Diabetes mellitus" = "DM",
+  "Diabetes mellitus type 1" = "T1DM",
+  "Diabetes mellitus type 2" = "T2DM"
+)
+fmt_ci <- function(x, lo, hi, digits = 1) {
+  sprintf(
+    paste0("%.", digits, "f (%.", digits, "f-%.", digits, "f)"),
+    x, lo, hi
+  )
+}
+fmt_p <- function(x) format.pval(x, digits = 2, eps = 0.001)
+format_notes <- function(notes) {
+  if (is.null(notes) || length(notes) == 0) return("")
+  notes <- gsub("%", "\\\\%", notes, fixed = TRUE)
+  paste0(
+    "\n\\vspace{1mm}\n\\begin{minipage}{0.96\\linewidth}\n",
+    "\\scriptsize\\textit{Notes:} ",
+    paste(notes, collapse = " "),
+    "\n\\end{minipage}"
+  )
+}
+format_pdf_table <- function(
+    data, caption, digits = 1, max_rows = 40, font_size = "scriptsize",
+    notes = NULL) {
+  shown <- head(data, max_rows)
+  numeric_columns <- vapply(shown, is.numeric, logical(1))
+  shown[numeric_columns] <- lapply(shown[numeric_columns], round, digits = digits)
+  paste0(
+    "\\begingroup\n\\", font_size, "\n",
+    "\\setlength{\\tabcolsep}{2.5pt}\n",
+    "\\renewcommand{\\arraystretch}{0.9}\n",
+    kable(
+      shown, format = "latex", booktabs = TRUE, longtable = TRUE,
+      caption = caption, escape = TRUE
+    ),
+    format_notes(notes),
+    "\n\\endgroup"
+  )
+}
+```
+
+```{r key-finding-values, include=FALSE}
+overall_prevalence <- rate_endpoints %>%
+  filter(
+    location_name == "Sub-Saharan Africa",
+    cause_name == "Diabetes mellitus",
+    sex_name == "Both",
+    measure_name == "Prevalence"
+  )
+overall_deaths <- rate_endpoints %>%
+  filter(
+    location_name == "Sub-Saharan Africa",
+    cause_name == "Diabetes mellitus",
+    sex_name == "Both",
+    measure_name == "Deaths"
+  )
+highest_2023_prevalence <- rate_endpoints %>%
+  filter(cause_name == "Diabetes mellitus", sex_name == "Both", measure_name == "Prevalence") %>%
+  slice_max(value_2023, n = 1, with_ties = FALSE)
+fastest_daly_growth <- rate_endpoints %>%
+  filter(cause_name == "Diabetes mellitus", sex_name == "Both", measure_name == "DALYs (Disability-Adjusted Life Years)") %>%
+  slice_max(relative_change_pct, n = 1, with_ties = FALSE)
+overall_ratio_change <- yll_yld_ratios %>%
+  filter(location_name == "Sub-Saharan Africa", year %in% c(1990, 2023)) %>%
+  select(year, yll_to_yld_ratio) %>%
+  pivot_wider(names_from = year, values_from = yll_to_yld_ratio, names_prefix = "ratio_")
+```
+
+# Data Readiness
+
+```{r availability-table, results='asis'}
+cat(format_pdf_table(
+  availability %>%
+    transmute(Input = input, Status = status, `Enabled analysis` = enabled_analysis),
+  "Available inputs and enabled analyses",
+  digits = 0,
+  notes = c(
+    "Age-standardized rates support comparisons across locations with different age structures.",
+    "UN WPP population data can support demographic-only projections.",
+    "Age-specific GBD rates are available and validated for GBD-consistent rate-effect decomposition and age-period-cohort analyses."
+  )
+))
+```
+
+The report presents descriptive, trend, forecast, sex-difference,
+diabetes-type, and mortality-to-disability analyses for overall Sub-Saharan
+Africa and its four GBD subregions. Matched GBD age-specific rates and counts
+are now available for decomposition and age-period-cohort implementation.
+Existing UN WPP population data support demographic projection scenarios.
+
+\newpage
+
+# Key Findings
+
+For overall SSA, age-standardized diabetes prevalence increased from
+`r round(overall_prevalence$value_1990, 1)` to
+`r round(overall_prevalence$value_2023, 1)` per 100,000 between 1990 and 2023,
+a `r round(overall_prevalence$relative_change_pct, 1)`% increase. Diabetes
+mortality increased from `r round(overall_deaths$value_1990, 1)` to
+`r round(overall_deaths$value_2023, 1)` per 100,000, a
+`r round(overall_deaths$relative_change_pct, 1)`% increase.
+
+Among the five regions, the highest 2023 age-standardized prevalence was in
+`r clean_location(highest_2023_prevalence$location_name)` at
+`r round(highest_2023_prevalence$value_2023, 1)` per 100,000. The fastest DALY
+rate growth was in `r clean_location(fastest_daly_growth$location_name)`, with
+a `r round(fastest_daly_growth$relative_change_pct, 1)`% increase from 1990 to
+2023. The overall SSA YLL-to-YLD ratio changed from
+`r round(overall_ratio_change$ratio_1990, 2)` in 1990 to
+`r round(overall_ratio_change$ratio_2023, 2)` in 2023, indicating the evolving
+balance between premature mortality and disability.
+
+\newpage
+
+# Measures and Interpretation
+
+This analysis uses six GBD measures. They answer related but distinct
+questions, so they should not be interpreted interchangeably.
+
+```{r measure-definitions, results='asis'}
+measure_definitions <- tibble(
+  Measure = c("Prevalence", "Incidence", "Deaths", "YLLs", "YLDs", "DALYs"),
+  `What it measures` = c(
+    "Existing diabetes cases in a population at a given time.",
+    "New diabetes cases occurring during a year.",
+    "Deaths attributed to diabetes during a year.",
+    "Years of life lost because diabetes deaths occurred before the reference life expectancy.",
+    "Years lived with disability from diabetes and its sequelae.",
+    "Total health loss: YLLs plus YLDs."
+  ),
+  `Main interpretation` = c(
+    "How widespread diabetes is.",
+    "How quickly new diabetes burden is being generated.",
+    "Fatal burden.",
+    "Premature-mortality burden.",
+    "Non-fatal disability burden.",
+    "Combined fatal and non-fatal burden."
+  )
+)
+cat(format_pdf_table(
+  measure_definitions,
+  "GBD diabetes burden measures used in this analysis",
+  digits = 0,
+  max_rows = 6,
+  notes = c(
+    "Age-standardized rates are used for comparisons across regions.",
+    "Counts measure absolute burden and are affected by population size and age structure."
+  )
+))
+```
+
+\newpage
+
+#  Overall SSA Results
+
+```{r main-burden-table}
+main_measures <- c("Prevalence", "Incidence", "Deaths", "DALYs (Disability-Adjusted Life Years)")
+main_burden_table <- rate_endpoints %>%
+  filter(location_name == "Sub-Saharan Africa", measure_name %in% main_measures) %>%
+  left_join(
+    rate_trends %>%
+      select(location_name, measure_name, cause_name, sex_name, annual_change_pct, lower_ci, upper_ci, p_value),
+    by = c("location_name", "measure_name", "cause_name", "sex_name")
+  ) %>%
+  left_join(
+    rate_forecasts %>%
+      filter(year == 2030) %>%
+      select(location_name, measure_name, cause_name, sex_name, selected_model, forecast, lower_95, upper_95),
+    by = c("location_name", "measure_name", "cause_name", "sex_name")
+  ) %>%
+  filter(sex_name == "Both") %>%
+  mutate(
+    Measure = clean_measure(measure_name),
+    Type = clean_cause(cause_name),
+    `APC, % (95% CI)` = fmt_ci(annual_change_pct, lower_ci, upper_ci, digits = 2),
+    `2030 forecast (95% PI)` = fmt_ci(forecast, lower_95, upper_95, digits = 1),
+    `p` = fmt_p(p_value)
+  ) %>%
+  select(
+    Measure, Type, `1990 rate` = value_1990, `2023 rate` = value_2023,
+    `Change, %` = relative_change_pct, `APC, % (95% CI)`,
+    Model = selected_model, `2030 forecast (95% PI)`, p
+  )
+write_csv(main_burden_table, file.path(table_dir, "overall_ssa_main_burden_table.csv"))
+```
+
+```{r main-burden-table-print, results='asis'}
+cat(format_pdf_table(
+  main_burden_table,
+  "Age-standardized rates, trends, and forecasts for overall SSA",
+  notes = c(
+    "Rates are age-standardized GBD estimates per 100,000 population.",
+    "APC is the average annual percentage change from a log-linear model.",
+    "PI is the model-based prediction interval for the 2030 forecast.",
+    "DALYs are disability-adjusted life years, combining fatal burden and non-fatal disability."
+  )
+))
+```
+
+```{r overall-burden-figure, fig.width=10.5, fig.height=6.8, fig.cap="Overall SSA diabetes burden by measure, diabetes type, and sex, 1990-2023."}
+figure1_data <- rates %>%
+  filter(location_name == "Sub-Saharan Africa", measure_name %in% main_measures) %>%
+  left_join(measure_short_df, by = "measure_name") %>%
+  mutate(
+    measure = factor(measure, levels = c("Prevalence", "Incidence", "Deaths", "DALYs")),
+    cause = factor(
+      recode(cause_name, "Diabetes mellitus" = "DM",
+             "Diabetes mellitus type 1" = "T1DM",
+             "Diabetes mellitus type 2" = "T2DM"),
+      levels = c("DM", "T1DM", "T2DM")
+    )
+  ) %>%
+  mutate(
+    facet_label = factor(
+      paste(measure, cause, sep = ": "),
+      levels = as.vector(outer(levels(measure), levels(cause), paste, sep = ": "))
+    ),
+    sex_name = factor(sex_name, levels = c("Male", "Female", "Both"))
+  )
+
+p_figure1 <- ggplot(figure1_data, aes(year, val, color = sex_name)) +
+  geom_line(linewidth = 0.45) +
+  facet_wrap(~ facet_label, scales = "free_y", ncol = 4) +
+  scale_color_manual(values = c(Male = "#0072B2", Female = "#D55E00", Both = "#333333")) +
+  scale_x_continuous(breaks = c(1990, 2000, 2010, 2020), expand = expansion(mult = c(0.01, 0.02))) +
+  scale_y_continuous(labels = rate_axis_labels) +
+  labs(x = NULL, y = "Age-standardized rate per 100,000", color = NULL,
+       caption = "Source: GBD 2023. Lines show point estimates.") +
+  paper_theme(base_size = 8)
+ggsave(file.path(figure_dir, "overall_ssa_burden_by_type_and_sex.png"), p_figure1, width = 10.5, height = 6.8, dpi = 300)
+p_figure1
+```
+
+\newpage
+
+# Overall SSA Extensions
+
+```{r overall-rate-endpoints, results='asis'}
+overall_rate_endpoints <- rate_endpoints %>%
+  filter(location_name == "Sub-Saharan Africa", cause_name == "Diabetes mellitus", sex_name == "Both") %>%
+  transmute(
+    Measure = clean_measure(measure_name),
+    `1990 rate (95% UI)` = fmt_ci(value_1990, lower_1990, upper_1990),
+    `2023 rate (95% UI)` = fmt_ci(value_2023, lower_2023, upper_2023),
+    `Change, %` = relative_change_pct
+  )
+cat(format_pdf_table(
+  overall_rate_endpoints,
+  "Overall SSA age-standardized endpoint rates",
+  notes = c(
+    "UI is the GBD 95 percent uncertainty interval.",
+    "YLLs are years of life lost from premature mortality; YLDs are years lived with disability.",
+    "DALYs are the sum of YLLs and YLDs."
+  )
+))
+```
+
+```{r forecast-figure, fig.width=10, fig.height=5.8, fig.cap="Overall SSA observed and forecast age-standardized rates through 2030."}
+p_forecast <- plot_rate_forecasts(
+  rates %>% filter(location_name == "Sub-Saharan Africa"),
+  rate_forecasts %>% filter(location_name == "Sub-Saharan Africa"),
+  "Sub-Saharan Africa"
+) +
+  labs(title = NULL, subtitle = NULL) +
+  paper_theme(base_size = 8)
+ggsave(file.path(figure_dir, "overall_ssa_age_standardized_rate_forecasts_2030.png"), p_forecast, width = 10, height = 5.8, dpi = 300)
+p_forecast
+```
+
+```{r count-table, results='asis'}
+overall_counts <- count_endpoints %>%
+  filter(location_name == "Sub-Saharan Africa", cause_name == "Diabetes mellitus", sex_name == "Both") %>%
+  transmute(
+    Measure = clean_measure(measure_name),
+    `1990 count (95% UI)` = fmt_ci(value_1990, lower_1990, upper_1990, digits = 0),
+    `2023 count (95% UI)` = fmt_ci(value_2023, lower_2023, upper_2023, digits = 0),
+    `Change, %` = relative_change_pct
+  )
+cat(format_pdf_table(
+  overall_counts,
+  "Overall SSA all-age count endpoints",
+  notes = c(
+    "Counts are all-age numbers, not age-standardized rates.",
+    "YLLs and YLDs are time-equivalent health loss measures; DALYs equal YLLs plus YLDs."
+  )
+))
+```
+
+\newpage
+
+# Overall Region Versus Subregions
+
+```{r subregion-trends, fig.width=10, fig.height=5.8, fig.cap="Age-standardized total diabetes trends in overall SSA and four subregions."}
+subregion_trend_data <- rates %>%
+  filter(cause_name == "Diabetes mellitus", sex_name == "Both") %>%
+  left_join(measure_short_df, by = "measure_name") %>%
+  mutate(measure = factor(measure, levels = unname(measure_short)),
+         region_short = factor(recode(location_name,
+           "Sub-Saharan Africa" = "SSA",
+           "Central Sub-Saharan Africa" = "Central SSA",
+           "Eastern Sub-Saharan Africa" = "Eastern SSA",
+           "Southern Sub-Saharan Africa" = "Southern SSA",
+           "Western Sub-Saharan Africa" = "Western SSA"),levels = c("SSA", "Central SSA", "Eastern SSA", "Southern SSA", "Western SSA")))
+
+new_region_palette <- c(
+  "SSA" = "#111111",
+  "Central SSA" = "#0072B2" ,
+  "Eastern SSA" = "#009E73",
+  "Southern SSA" = "#D55E00",
+  "Western SSA" = "#CC79A7"
+)
+p_subregion_trends <- ggplot(subregion_trend_data, aes(year, val, color = region_short, linetype = region_short)) +
+  geom_line(linewidth = 0.85) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 3) +
+  scale_color_manual(values = new_region_palette) +
+  scale_x_continuous(breaks = c(1990,1995, 2000,2005, 2010, 2015, 2020,2023), expand = expansion(mult = c(0.01, 0.05))) +
+  scale_y_continuous(labels = rate_axis_labels) +
+  labs(x = NULL, y = "Age-standardized rate per 100,000", color = NULL, linetype = NULL,
+       caption = "Both sexes, total diabetes mellitus. Source: GBD 2023.") +
+  paper_theme(base_size = 10) +
+  theme(legend.text = element_text(size = 10, face="bold"),
+        axis.text.x = element_text(size = 10, face="bold", angle=45, hjust=1),
+        axis.text.y = element_text(size = 10, face="bold"))
+ggsave(file.path(figure_dir, "ssa_subregion_age_standardized_rate_trends.png"), p_subregion_trends, width = 10, height = 5.8, dpi = 300)
+p_subregion_trends
+```
+
+```{r subregion-endpoints, results='asis'}
+subregion_endpoint_table <- rate_endpoints %>%
+  filter(cause_name == "Diabetes mellitus", sex_name == "Both") %>%
+  arrange(factor(location_name, levels = locations), factor(measure_name, levels = measure_levels)) %>%
+  transmute(
+    Region = clean_location(location_name),
+    Measure = clean_measure(measure_name),
+    `1990 rate` = value_1990,
+    `2023 rate` = value_2023,
+    `Change, %` = relative_change_pct
+  )
+cat(format_pdf_table(
+  subregion_endpoint_table,
+  "Overall SSA and subregional age-standardized endpoint comparison",
+  max_rows = 30,
+  notes = c(
+    "Rates are per 100,000 population and age-standardized.",
+    "Change is the percentage change between 1990 and 2023."
+  )
+))
+```
+
+```{r subregion-trend-table, results='asis'}
+subregion_trend_table <- rate_trends %>%
+  filter(cause_name == "Diabetes mellitus", sex_name == "Both") %>%
+  arrange(factor(location_name, levels = locations), factor(measure_name, levels = measure_levels)) %>%
+  transmute(
+    Region = clean_location(location_name),
+    Measure = clean_measure(measure_name),
+    `APC, % (95% CI)` = fmt_ci(annual_change_pct, lower_ci, upper_ci, digits = 2),
+    p = fmt_p(p_value),
+    `Adj. R2` = adjusted_r_squared
+  )
+cat(format_pdf_table(
+  subregion_trend_table,
+  "Overall SSA and subregional full-period log-linear trends",
+  digits = 3,
+  max_rows = 30,
+  notes = c(
+    "APC is the average annual percentage change from a log-linear model across 1990-2023.",
+    "Adj. R2 is the adjusted coefficient of determination for that trend model."
+  )
+))
+```
+
+```{r rate-ratio-to-ssa, results='asis'}
+relative_to_ssa <- rates %>%
+  filter(cause_name == "Diabetes mellitus", sex_name == "Both", year %in% c(1990, 2023)) %>%
+  select(location_name, measure_name, year, val) %>%
+  group_by(measure_name, year) %>%
+  mutate(overall_ssa_rate = val[location_name == "Sub-Saharan Africa"]) %>%
+  ungroup() %>%
+  filter(location_name != "Sub-Saharan Africa") %>%
+  mutate(subregion_to_overall_rate_ratio = val / overall_ssa_rate) %>%
+  transmute(
+    Region = clean_location(location_name),
+    Measure = clean_measure(measure_name),
+    Year = year,
+    `Rate ratio vs SSA` = subregion_to_overall_rate_ratio
+  )
+write_csv(relative_to_ssa, file.path(table_dir, "subregion_to_overall_ssa_rate_ratios.csv"))
+cat(format_pdf_table(
+  relative_to_ssa,
+  "Subregional rate ratios relative to overall SSA",
+  digits = 3,
+  max_rows = 48,
+  notes = c(
+    "A ratio above 1 means the subregion has a higher age-standardized rate than overall SSA in that year.",
+    "A ratio below 1 means the subregion has a lower rate than overall SSA."
+  )
+))
+```
+
+```{r percent-change-figure, fig.width=10, fig.height=4.8, fig.cap="Percent change in total diabetes age-standardized rates, 1990-2023."}
+p_change <- subregion_endpoint_table %>%
+  mutate(
+    Measure = factor(Measure, levels = unname(measure_short)),
+    Region = factor(Region, levels = clean_location(locations))
+  ) %>%
+  ggplot(aes(Region, `Change, %`, fill = Measure)) +
+  geom_col(position = position_dodge(width = 0.85), width = 0.65) +
+  coord_flip() +
+  scale_y_continuous(labels = label_percent(scale = 1),
+                     limits =c(0,65)) +
+  labs(x = NULL, y = "Percent change", fill = NULL,size = 10,
+       caption = "Both sexes, total diabetes mellitus. Source: GBD 2023.") +
+  paper_theme(base_size = 14)+
+  theme(legend.text = element_text(size = 10, face="bold"),
+        axis.text.x = element_text(size = 10, face="bold"),
+        axis.text.y = element_text(size = 10, face="bold"))
+ggsave(file.path(figure_dir, "ssa_subregion_percent_change_1990_2023.png"), p_change, width = 10, height = 4.8, dpi = 300)
+p_change
+```
+
+\newpage
+
+# Sex Differences and Diabetes Type Mix
+
+```{r sex-ratio-table, results='asis'}
+sex_ratio_table <- sex_ratios %>%
+  filter(cause_name == "Diabetes mellitus", year == 2023) %>%
+  arrange(factor(location_name, levels = locations), factor(measure_name, levels = measure_levels)) %>%
+  transmute(
+    Region = clean_location(location_name),
+    Measure = clean_measure(measure_name),
+    Male,
+    Female,
+    `M:F ratio` = male_to_female_rate_ratio
+  )
+cat(format_pdf_table(
+  sex_ratio_table,
+  "Male-to-female age-standardized rate ratios in 2023",
+  max_rows = 30,
+  notes = "M:F ratio is the male age-standardized rate divided by the female age-standardized rate."
+))
+```
+
+```{r type-share-table, results='asis'}
+type_share_table <- type_shares %>%
+  filter(year == 2023) %>%
+  arrange(factor(location_name, levels = locations), factor(measure_name, levels = measure_levels)) %>%
+  transmute(
+    Region = clean_location(location_name),
+    Measure = clean_measure(measure_name),
+    `T1DM share, %` = t1dm_share_pct,
+    `T2DM share, %` = t2dm_share_pct,
+    `Component difference, %` = component_sum_difference_pct
+  )
+cat(format_pdf_table(
+  type_share_table,
+  "Diabetes type shares of all-age burden in 2023",
+  max_rows = 30,
+  notes = c(
+    "T1DM is type 1 diabetes mellitus; T2DM is type 2 diabetes mellitus.",
+    "Component difference shows the percent difference between T1DM plus T2DM and total diabetes; small nonzero values reflect GBD estimation and rounding."
+  )
+))
+```
+
+\newpage
+
+# Mortality-to-Disability Transition
+```{r}
+head(yll_yld_ratios)
+## simplify the location names for plotting
+yll_yld_ratios <- yll_yld_ratios %>%
+  mutate(location_name = factor(recode(
+    location_name,
+    "Sub-Saharan Africa" = "SSA",
+    "Central Sub-Saharan Africa" = "Central SSA",
+    "Eastern Sub-Saharan Africa" = "Eastern SSA",
+    "Southern Sub-Saharan Africa" = "Southern SSA",
+    "Western Sub-Saharan Africa" = "Western SSA"
+  ), levels = c("SSA", "Central SSA", "Eastern SSA", "Southern SSA", "Western SSA")))
+
+```
+
+
+```{r yll-yld-figure, fig.width=9.5, fig.height=4.5, fig.cap="YLL-to-YLD ratio in overall SSA and subregions, 1990-2023."}
+p_ratio <- ggplot(yll_yld_ratios, aes(year, yll_to_yld_ratio, color = location_name)) +
+  geom_line(linewidth = 0.6) +
+  geom_point(size = 1.5, na.rm = TRUE) +
+  scale_color_manual(values = new_region_palette) +
+  scale_x_continuous(breaks = c(1990,1995, 2000, 2005, 2010,2015, 2020, 2023)) +scale_y_continuous(breaks= seq((min(yll_yld_ratios$yll_to_yld_ratio)-0.5), (max(yll_yld_ratios$yll_to_yld_ratio)+1),length=20)) +
+  labs(x = NULL, y = "YLL-to-YLD ratio", color = NULL,
+       caption = "Both sexes, total diabetes mellitus. Ratio calculated from all-age counts.") +
+  paper_theme(base_size = 8) +
+  theme(legend.text = element_text(size = 10, face = "bold"),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1, face = "bold"),
+        axis.text.y = element_text(size = 10, face = "bold"))
+ggsave(file.path(figure_dir, "ssa_subregion_yll_to_yld_ratio.png"), p_ratio, width = 9.5, height = 4.5, dpi = 300)
+p_ratio
+```
+
+```{r yll-yld-period-table, results='asis'}
+period_ratio_table <- period_ratios %>%
+  transmute(Region = clean_location(location_name), Period = period, `YLL:YLD` = yll_to_yld_ratio)
+cat(format_pdf_table(
+  period_ratio_table,
+  "Period mean YLL-to-YLD ratios",
+  digits = 3,
+  max_rows = 35,
+  notes = "Higher YLL:YLD ratios indicate a larger share of burden from premature mortality relative to disability."
+))
+```
+
+\newpage
+
+# Pre-Forecast Diagnostics
+
+Before fitting forecasting models, each overall SSA total-diabetes rate series
+was inspected for smoothing behavior, autocorrelation structure, partial
+autocorrelation structure, and differencing needs. These diagnostics are shown
+for the six core GBD measures because they are the headline forecast outcomes.
+
+```{r trailing-mean-figure, fig.width=10, fig.height=5.8, fig.cap="Observed rates and 5-year trailing means for overall SSA, total diabetes."}
+p_trailing <- trailing_mean_data %>%
+  left_join(measure_short_df, by = "measure_name") %>%
+  mutate(measure = factor(measure, levels = unname(measure_short))) %>%
+  ggplot(aes(year, val)) +
+  geom_line(color = "#9E9E9E", linewidth = 0.65) +
+  geom_line(aes(y = trailing_mean_5yr), color = "#0072B2", linewidth = 0.85, na.rm = TRUE) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 3) +
+  scale_x_continuous(breaks = c(1990,1995, 2000,2005, 2010,2015, 2020, 2023), expand = expansion(mult = c(0.01, 0.02))) +
+  scale_y_continuous(labels = rate_axis_labels) +
+  labs(
+    x = NULL, y = "Age-standardized rate per 100,000",
+    caption = "Grey line: annual GBD estimate. Blue line: 5-year trailing mean."
+  ) +
+  paper_theme(base_size = 8)+
+  theme(strip.text = element_text(face = "bold", size = 10),
+        axis.text.x = element_text(size = 10, face="bold", angle=45, hjust=1),
+        axis.text.y = element_text(size = 10, face="bold"))
+ggsave(file.path(figure_dir, "overall_ssa_5yr_trailing_means.png"), p_trailing, width = 10, height = 5.8, dpi = 300)
+p_trailing
+```
+
+```{r acf-pacf-figure, fig.width=10, fig.height=6.4, fig.cap="ACF and PACF diagnostics for overall SSA total diabetes rates."}
+p_acf <- ggplot(acf_pacf_data, aes(lag, value)) +
+  geom_hline(yintercept = 0, color = "#666666", linewidth = 0.25) +
+  geom_segment(aes(xend = lag, yend = 0), color = "#0072B2", linewidth = 0.45) +
+  facet_grid(diagnostic ~ measure) +
+  scale_x_continuous(breaks = c(1, 4, 8, 12)) +
+  labs(
+    x = "Lag, years", y = "Correlation",
+    caption = "ACF: autocorrelation function. PACF: partial autocorrelation function. Diagnostics shown for undifferenced annual rates."
+  ) +
+  paper_theme(base_size = 10) +
+  theme(strip.text = element_text(face = "bold", size = 10),
+        axis.text.x = element_text(size = 10, face="bold"),
+        axis.text.y = element_text(size = 10, face="bold"))
+ggsave(file.path(figure_dir, "overall_ssa_acf_pacf_diagnostics.png"), p_acf, width = 10, height = 6.4, dpi = 300)
+p_acf
+```
+
+```{r stationarity-table, results='asis'}
+cat(format_pdf_table(
+  stationarity_checks %>%
+    transmute(
+      Measure,
+      `KPSS ndiffs` = kpss_ndiffs,
+      `ADF ndiffs` = adf_ndiffs,
+      `PP ndiffs` = pp_ndiffs,
+      `ARIMA p` = auto_arima_p,
+      `ARIMA d` = auto_arima_d,
+      `ARIMA q` = auto_arima_q,
+      `Selected ARIMA` = selected_arima
+    ),
+  "Stationarity and ARIMA differencing diagnostics for overall SSA total diabetes rates",
+  digits = 0,
+  max_rows = 6,
+  notes = c(
+    "ndiffs is the number of differences suggested by each unit-root or stationarity test.",
+    "KPSS tests stationarity as the null hypothesis; ADF and PP test a unit root as the null hypothesis.",
+    "The selected ARIMA order is the order returned by auto.arima for the undifferenced input series."
+  )
+))
+```
+
+In `auto.arima()`, the differencing order \(d\) is selected before searching
+over AR and MA orders. For a non-seasonal annual series, the function uses
+unit-root and stationarity tests through `ndiffs()` to estimate the smallest
+number of differences needed to make the series approximately stationary. In
+this report, KPSS, ADF, and PP suggestions are shown side by side, while the
+`auto_arima_d` column records the value actually used by `auto.arima()` in the
+selected model. After \(d\) is chosen, `auto.arima()` searches over candidate
+\((p,d,q)\) models and chooses the specification with the best information
+criterion, subject to its default constraints.
+
+\newpage
+
+# Forecasting Models and Validation
+
+The forecasting target is the annual age-standardized rate \(y_t\) for a
+single stratum defined by location, measure, diabetes cause, and sex. Calendar
+year \(t\) is the time index. Models are trained on observed GBD estimates from
+1990 to 2023 and evaluated using expanding-window one-step-ahead validation.
+The initial training window ends in 2004; the model is then refit repeatedly to
+forecast each next year through 2023.
+
+```{r model-registry-table, results='asis'}
+cat(format_pdf_table(
+  model_registry %>%
+    transmute(Model = model, Status = status, `Role in analysis` = primary_use),
+  "Forecasting model registry",
+  digits = 0,
+  max_rows = 4,
+  notes = c(
+    "LSTM fitting requires the R keras/tensorflow packages plus a working Python TensorFlow backend.",
+    lstm_status$lstm_status
+  )
+))
+```
+
+## Model Specifications
+
+**Log-linear trend model.** The descriptive trend model is
+\[
+\log(y_t) = \alpha + \beta t + \epsilon_t.
+\]
+The average annual percentage change is
+\[
+APC = 100\{\exp(\beta)-1\}.
+\]
+This model is used for interpretable long-run change, not for selecting the
+best forecast.
+
+**ARIMA.** The autoregressive integrated moving-average model is written as
+\[
+\phi(B)(1-B)^d y_t = c + \theta(B)\epsilon_t,
+\]
+where \(B\) is the backshift operator, \(d\) is the differencing order, and
+\(\phi(B)\) and \(\theta(B)\) are autoregressive and moving-average
+polynomials. ARIMA is included because diabetes rates may contain serial
+dependence, gradual trend, and short-term autocorrelated deviations.
+
+**ETS.** The exponential-smoothing state-space model decomposes the series into
+level, trend, and error components. In the additive-error form,
+\[
+y_t = \ell_{t-1} + b_{t-1} + \epsilon_t,
+\]
+\[
+\ell_t = \ell_{t-1} + b_{t-1} + \alpha\epsilon_t,\quad
+b_t = b_{t-1} + \beta\epsilon_t.
+\]
+ETS is included because it performs well for smooth epidemiologic trajectories
+where recent observations should receive more weight than distant observations.
+
+**LSTM.** The long short-term memory model is specified as a recurrent neural
+network for lagged first-differenced rate sequences,
+\(\Delta y_t = y_t - y_{t-1}\). The fitted network predicts
+\(\widehat{\Delta y}_{t+1}\), and the rate forecast is reconstructed as
+\(\hat{y}_{t+1} = y_t + \widehat{\Delta y}_{t+1}\). For a scaled input vector
+\(x_t\), the core gates are
+\[
+f_t = \sigma(W_f x_t + U_f h_{t-1} + b_f),
+\]
+\[
+i_t = \sigma(W_i x_t + U_i h_{t-1} + b_i),\quad
+\tilde{c}_t = \tanh(W_c x_t + U_c h_{t-1} + b_c),
+\]
+\[
+c_t = f_t \odot c_{t-1} + i_t \odot \tilde{c}_t,\quad
+o_t = \sigma(W_o x_t + U_o h_{t-1} + b_o),
+\]
+\[
+h_t = o_t \odot \tanh(c_t).
+\]
+The forecast is generated from the hidden state \(h_t\). LSTMs are theoretically
+attractive because the gated cell state can represent nonlinear temporal
+patterns and longer memory than standard autoregressive models. They are not
+assumed to outperform ARIMA automatically; performance must be judged by the
+validation metrics below.
+
+## Variables Used
+
+All forecasting models use the same outcome: annual age-standardized rate per
+100,000 population. Models are fit separately for each location, measure,
+diabetes cause, and sex. No external covariates are included in the current
+forecasting stage; therefore, forecasts represent continuation of historical
+rate patterns, not causal projections under policy or exposure scenarios.
+
+## Model Comparison Metrics
+
+For validation year \(t\), let \(y_t\) be the observed rate and \(\hat{y}_t\)
+the one-step-ahead forecast. With \(n\) validation years:
+\[
+RMSE = \sqrt{\frac{1}{n}\sum_{t=1}^{n}(y_t-\hat{y}_t)^2},
+\]
+\[
+MAE = \frac{1}{n}\sum_{t=1}^{n}|y_t-\hat{y}_t|,
+\]
+\[
+MAPE = \frac{100}{n}\sum_{t=1}^{n}\left|\frac{y_t-\hat{y}_t}{y_t}\right|,
+\]
+\[
+MASE =
+\frac{\frac{1}{n}\sum_{t=1}^{n}|y_t-\hat{y}_t|}
+{\frac{1}{T-1}\sum_{t=2}^{T}|y_t-y_{t-1}|}.
+\]
+Lower values indicate better validation performance. MASE is the primary
+selection metric because it is scale-free and compares model error with a
+naive random-walk benchmark.
+
+For LSTM forecasts, 95 percent prediction intervals are estimated from the
+empirical distribution of expanding-window validation residuals. The interval
+is centered on the recursive LSTM point forecast and widened by the square
+root of the forecast horizon. These intervals are therefore validation-residual
+intervals rather than parametric state-space intervals.
+
+## Model Comparison Results
+
+The production 2030 forecast is selected from ARIMA and ETS for every
+location-measure-cause-sex stratum because those models provide stable
+prediction intervals for all series. The headline model comparison separately
+fits ARIMA, ETS, and LSTM for overall SSA, both sexes, total diabetes across
+all six measures. These headline results are used to compare machine-learning
+validation performance against classical time-series models.
+
+```{r headline-model-comparison-table, results='asis'}
+# Clean the headline comparison so model metrics are readable in the PDF.
+headline_model_accuracy_table <- headline_model_accuracy %>%
+  mutate(
+    Measure = clean_measure(measure_name),
+    Model = model,
+    Status = if_else(is.na(mase), "Not fitted", "Fitted")
+  ) %>%
+  arrange(factor(Measure, levels = unname(measure_short)), Model) %>%
+  transmute(
+    Measure,
+    Model,
+    RMSE = rmse,
+    MAE = mae,
+    MAPE = mape,
+    MASE = mase,
+    `Validation years` = validation_years,
+    Selected = if_else(selected, "Yes", "No"),
+    Status
+  )
+
+cat(format_pdf_table(
+  headline_model_accuracy_table,
+  "Headline forecast model comparison for overall SSA total diabetes rates",
+  digits = 3,
+  max_rows = 18,
+  notes = c(
+    "The headline comparison uses expanding-window one-step-ahead validation.",
+    "LSTM is fitted to lagged first-differenced rates and transformed back to the original rate scale for validation.",
+    "The selected model is the one with the lowest MASE within each measure."
+  )
+))
+```
+
+```{r headline-selected-models-table, results='asis'}
+# Show the winning headline model for each measure so LSTM selections are explicit.
+headline_selected_models <- headline_model_accuracy %>%
+  filter(selected) %>%
+  arrange(factor(measure_name, levels = measure_levels)) %>%
+  transmute(
+    Measure = clean_measure(measure_name),
+    `Selected headline model` = model,
+    RMSE = rmse,
+    MAE = mae,
+    MAPE = mape,
+    MASE = mase
+  )
+
+write_csv(headline_selected_models, file.path(table_dir, "headline_selected_forecast_models.csv"))
+
+cat(format_pdf_table(
+  headline_selected_models,
+  "Selected headline forecast model by measure",
+  digits = 3,
+  max_rows = 6,
+  notes = c(
+    "Selection is based on the lowest MASE among ARIMA, ETS, and LSTM.",
+    "This table applies to overall SSA, both sexes, total diabetes."
+  )
+))
+```
+
+```{r model-selection-summary-table, results='asis'}
+# Count how often each production model is selected across all forecast strata.
+model_selection_summary <- forecast_accuracy %>%
+  filter(selected) %>%
+  count(model, name = "Selected strata") %>%
+  mutate(`Share selected, %` = 100 * `Selected strata` / sum(`Selected strata`)) %>%
+  arrange(desc(`Selected strata`)) %>%
+  rename(Model = model)
+
+write_csv(model_selection_summary, file.path(table_dir, "forecast_model_selection_summary.csv"))
+
+cat(format_pdf_table(
+  model_selection_summary,
+  "Production forecast model selection across all strata",
+  digits = 1,
+  max_rows = 4,
+  notes = c(
+    "A stratum is one unique location, measure, diabetes cause, and sex combination.",
+    "This production table compares ARIMA and ETS for all strata; LSTM results are shown in the headline comparison above."
+  )
+))
+```
+
+```{r headline-model-mase-figure, fig.width=9.5, fig.height=4.8, fig.cap="Headline forecast model comparison by MASE."}
+# Plot MASE because it is the scale-free model-selection metric.
+p_model_mase <- headline_model_accuracy %>%
+  filter(!is.na(mase)) %>%
+  mutate(
+    measure = factor(clean_measure(measure_name), levels = unname(measure_short)),
+    model = factor(model, levels = c("ARIMA", "ETS", "LSTM"))
+  ) %>%
+  ggplot(aes(model, mase, fill = model)) +
+  geom_col(width = 0.65) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 3) +
+  scale_fill_manual(values = c(ARIMA = "#0072B2", ETS = "#D55E00", LSTM = "#009E73")) +
+  scale_y_continuous(labels = label_number(accuracy = 0.01)) +
+  labs(
+    x = NULL, y = "MASE",
+    caption = "Lower MASE indicates better one-step-ahead validation performance."
+  ) +
+  paper_theme(base_size = 8)
+ggsave(file.path(figure_dir, "headline_forecast_model_mase_comparison.png"), p_model_mase, width = 9.5, height = 4.8, dpi = 300)
+p_model_mase
+```
+
+```{r headline-validation-predictions-figure, fig.width=10, fig.height=5.8, fig.cap="Observed and predicted validation-year rates for headline forecast models."}
+# Compare one-step-ahead validation predictions against observed rates.
+p_validation_predictions <- headline_model_errors %>%
+  left_join(measure_short_df, by = "measure_name") %>%
+  mutate(
+    measure = factor(measure, levels = unname(measure_short)),
+    model = factor(model, levels = c("ARIMA", "ETS", "LSTM"))
+  ) %>%
+  ggplot(aes(validation_year)) +
+  geom_line(aes(y = actual), color = "#111111", linewidth = 0.45) +
+  geom_point(aes(y = actual), color = "#111111", size = 0.9) +
+  geom_line(aes(y = predicted, color = model), linewidth = 0.5) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 3) +
+  scale_color_manual(values = c(ARIMA = "#0072B2", ETS = "#D55E00", LSTM = "#009E73")) +
+  scale_x_continuous(breaks = c(2015, 2018, 2020, 2023), expand = expansion(mult = c(0.01, 0.02))) +
+  scale_y_continuous(labels = rate_axis_labels) +
+  labs(
+    x = NULL, y = "Age-standardized rate per 100,000", color = NULL,
+    caption = "Black line: observed GBD rate. Colored lines: one-step-ahead validation predictions."
+  ) +
+  paper_theme(base_size = 8)
+ggsave(file.path(figure_dir, "headline_forecast_validation_predictions.png"), p_validation_predictions, width = 10, height = 5.8, dpi = 300)
+p_validation_predictions
+```
+
+# Forecast Validation and 2030 Projections
+
+```{r headline-selected-forecast-table, results='asis'}
+# Show 2030 forecasts from the selected ARIMA/ETS/LSTM headline model.
+headline_selected_forecast_2030 <- headline_selected_forecasts %>%
+  filter(year == 2030) %>%
+  arrange(factor(measure_name, levels = measure_levels)) %>%
+  transmute(
+    Measure = clean_measure(measure_name),
+    Model = selected_model,
+    `2030 forecast (95% PI)` = fmt_ci(forecast, lower_95, upper_95),
+    `Interval method` = interval_method
+  )
+
+cat(format_pdf_table(
+  headline_selected_forecast_2030,
+  "Headline selected-model 2030 forecasts with prediction intervals",
+  digits = 1,
+  max_rows = 6,
+  notes = c(
+    "This table applies to overall SSA, both sexes, total diabetes.",
+    "ARIMA and ETS intervals are model prediction intervals.",
+    "LSTM intervals are empirical validation-residual prediction intervals."
+  )
+))
+```
+
+```{r headline-selected-forecast-figure, fig.width=10, fig.height=5.8, fig.cap="Headline selected-model forecasts through 2030 with prediction intervals."}
+# Plot selected headline forecasts, including LSTM residual intervals where selected.
+headline_observed <- rates %>%
+  filter(
+    location_name == "Sub-Saharan Africa",
+    cause_name == "Diabetes mellitus",
+    sex_name == "Both"
+  ) %>%
+  transmute(
+    measure_name,
+    year,
+    value = val,
+    lower = NA_real_,
+    upper = NA_real_,
+    selected_model = "Observed",
+    series = "Observed"
+  )
+
+headline_projected <- headline_selected_forecasts %>%
+  transmute(
+    measure_name,
+    year,
+    value = forecast,
+    lower = lower_95,
+    upper = upper_95,
+    selected_model,
+    series = "Forecast"
+  )
+
+p_headline_selected_forecast <- bind_rows(headline_observed, headline_projected) %>%
+  left_join(measure_short_df, by = "measure_name") %>%
+  mutate(
+    measure = factor(measure, levels = unname(measure_short)),
+    selected_model = factor(selected_model, levels = c("Observed", "ARIMA", "ETS", "LSTM"))
+  ) %>%
+  ggplot(aes(year, value, color = selected_model)) +
+  geom_ribbon(
+    data = ~ filter(.x, series == "Forecast"),
+    aes(ymin = lower, ymax = upper, fill = selected_model),
+    alpha = 0.18, color = NA
+  ) +
+  geom_line(linewidth = 0.55) +
+  geom_vline(xintercept = 2023.5, linewidth = 0.3, linetype = "dashed") +
+  facet_wrap(~ measure, scales = "free_y", ncol = 3) +
+  scale_color_manual(values = c(Observed = "#111111", ARIMA = "#0072B2", ETS = "#D55E00", LSTM = "#009E73")) +
+  scale_fill_manual(values = c(Observed = "#111111", ARIMA = "#0072B2", ETS = "#D55E00", LSTM = "#009E73")) +
+  scale_x_continuous(breaks = c(1990, 2000, 2010, 2020, 2030), expand = expansion(mult = c(0.01, 0.02))) +
+  scale_y_continuous(labels = rate_axis_labels) +
+  labs(
+    x = NULL, y = "Age-standardized rate per 100,000",
+    color = NULL, fill = NULL,
+    caption = "Forecast ribbons show 95% prediction intervals. LSTM intervals use validation residuals."
+  ) +
+  paper_theme(base_size = 8)
+
+ggsave(
+  file.path(figure_dir, "headline_selected_model_forecasts_2030.png"),
+  p_headline_selected_forecast, width = 10, height = 5.8, dpi = 300
+)
+p_headline_selected_forecast
+```
+
+```{r subregion-forecast-interval-table, results='asis'}
+# Show 2030 subregion prediction intervals from the full-strata production forecasts.
+subregion_forecast_2030 <- rate_forecasts %>%
+  filter(
+    cause_name == "Diabetes mellitus",
+    sex_name == "Both",
+    year == 2030
+  ) %>%
+  arrange(factor(location_name, levels = locations), factor(measure_name, levels = measure_levels)) %>%
+  transmute(
+    Region = clean_location(location_name),
+    Measure = clean_measure(measure_name),
+    Model = selected_model,
+    `2030 forecast (95% PI)` = fmt_ci(forecast, lower_95, upper_95)
+  )
+
+write_csv(subregion_forecast_2030, file.path(table_dir, "subregion_2030_prediction_intervals.csv"))
+
+cat(format_pdf_table(
+  subregion_forecast_2030,
+  "Overall SSA and subregional 2030 prediction intervals",
+  digits = 1,
+  max_rows = 30,
+  notes = c(
+    "Forecasts are age-standardized rates per 100,000 for both sexes and total diabetes.",
+    "Subregion forecasts use the full-strata ARIMA/ETS production models.",
+    "The LSTM-inclusive headline forecast for overall SSA is shown separately above."
+  )
+))
+```
+
+The LSTM-inclusive headline forecasts above are the main forecast results for
+overall SSA, both sexes, total diabetes. Full-strata ARIMA/ETS production
+outputs are retained as machine-readable supplementary files because they cover
+every location, sex, measure, and diabetes type. The full production ARIMA and
+ETS model comparison is saved as
+`outputs/sub_saharan_africa/full_analysis/tables/forecast_model_accuracy.csv`.
+The headline ARIMA/ETS/LSTM comparison is saved as
+`outputs/sub_saharan_africa/full_analysis/tables/headline_forecast_model_comparison.csv`.
+The headline selected-model forecasts with LSTM prediction intervals are saved
+as `outputs/sub_saharan_africa/full_analysis/tables/headline_selected_model_forecasts_2024_2030.csv`.
+
+\newpage
+
+# Age-Specific Count Quality
+
+```{r age-count-qc-table, results='asis'}
+cat(format_pdf_table(
+  age_count_qc %>%
+    transmute(Region = clean_location(location_name), Sex = sex_name, Rows = rows, Measures = measures, Causes = causes, Ages = ages, Years = years),
+  "Age-specific count quality summary",
+  digits = 0,
+  notes = "Each complete region-sex stratum should contain 34 years, 25 age groups, 6 measures, and 3 diabetes causes."
+))
+```
+
+Age-specific counts, matched GBD age-specific rates, and UN WPP population data
+are complete. The rate file covers all five regions, three sexes, three causes,
+six measures, 25 mutually exclusive age groups, and every year from 1990 to
+2023.
+
+\newpage
+
+# Symmetric Decomposition of Change, 1990-2023
+
+```{r population-validation-table, results='asis'}
+cat(format_pdf_table(
+  population_qc %>%
+    transmute(
+      `Demographic cells` = demographic_cells,
+      `Cells reconstructed` = cells_with_denominator,
+      `Maximum relative spread` = maximum_relative_spread,
+      `Median relative spread` = median_relative_spread
+    ),
+  "Validation of GBD-implied age-sex population denominators",
+  digits = 8,
+  notes = "Population was reconstructed as count/rate x 100,000. Agreement across causes and measures confirms that matched counts and rates use a common denominator."
+))
+```
+
+```{r decomposition-table, results='asis'}
+decomposition_headline <- symmetric_decomposition %>%
+  filter(sex_name == "Both", cause_name == "Diabetes mellitus") %>%
+  transmute(
+    Region = clean_location(location_name),
+    Measure = clean_measure(measure_name),
+    `Observed change` = observed_change,
+    `Population size` = population_size_effect,
+    `Age structure` = age_structure_effect,
+    `Age-specific rate` = age_specific_rate_effect,
+    `Numerical error` = decomposition_error
+  ) %>%
+  arrange(factor(Region, levels = c("SSA", "Central SSA", "Eastern SSA", "Southern SSA", "Western SSA")),
+          factor(Measure, levels = unname(measure_short)))
+cat(format_pdf_table(
+  decomposition_headline,
+  "Symmetric decomposition of the change in total diabetes burden, both sexes, 1990-2023",
+  digits = 1,
+  max_rows = 30,
+  notes = c(
+    "Effects are absolute changes in GBD counts and sum to the reconstructed observed change.",
+    "Each effect is the average marginal contribution across all six possible factor orderings."
+  )
+))
+```
+
+```{r decomposition-figure, fig.width=7.2, fig.height=4.8, fig.cap="Symmetric decomposition of the change in total diabetes burden, 1990-2023."}
+decomposition_plot_data <- symmetric_decomposition %>%
+  filter(
+    sex_name == "Both", cause_name == "Diabetes mellitus",
+    measure_name %in% c("Prevalence", "Deaths", "DALYs (Disability-Adjusted Life Years)")
+  ) %>%
+  select(location_name, measure_name, population_size_effect,
+         age_structure_effect, age_specific_rate_effect) %>%
+  pivot_longer(
+    ends_with("effect"), names_to = "effect", values_to = "contribution"
+  ) %>%
+  mutate(
+    effect = recode(effect,
+      population_size_effect = "Population size",
+      age_structure_effect = "Age structure",
+      age_specific_rate_effect = "Age-specific rate"),
+    location_name = factor(location_name, levels = locations),
+    measure = factor(clean_measure(measure_name), levels = c("Prevalence", "Deaths", "DALYs"))
+  )
+decomposition_plot <- ggplot(decomposition_plot_data,
+  aes(x = location_name, y = contribution, fill = effect)) +
+  geom_col(position = "stack") +
+  geom_hline(yintercept = 0, linewidth = 0.25) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 1) +
+  scale_x_discrete(labels = clean_location) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = c("Population size" = "#0072B2", "Age structure" = "#D55E00", "Age-specific rate" = "#009E73")) +
+  labs(x = NULL, y = "Contribution to count change") + paper_theme() +
+  theme(axis.text.x = element_text(angle = 25, hjust = 1))
+print(decomposition_plot)
+ggsave(file.path(figure_dir, "symmetric_decomposition_1990_2023.png"),
+       decomposition_plot, width = 7.2, height = 4.8, dpi = 300)
+```
+
+\newpage
+
+# Age-Specific Patterns and Age-Adjusted Temporal Drift
+
+```{r age-pattern-figure, fig.width=7.2, fig.height=4.8, fig.cap="Age-specific total diabetes rates in 2023, both sexes."}
+age_pattern_plot_data <- age_specific_endpoints %>%
+  filter(
+    sex_name == "Both", cause_name == "Diabetes mellitus",
+    measure_name %in% c("Prevalence", "Incidence", "Deaths", "DALYs (Disability-Adjusted Life Years)")
+  ) %>%
+  mutate(
+    age_name = factor(age_name, levels = c(
+      "0-6 days", "7-27 days", "1-5 months", "6-11 months", "12-23 months",
+      "2-4 years", "5-9 years", "10-14 years", "15-19 years", "20-24 years",
+      "25-29 years", "30-34 years", "35-39 years", "40-44 years", "45-49 years",
+      "50-54 years", "55-59 years", "60-64 years", "65-69 years", "70-74 years",
+      "75-79 years", "80-84 years", "85-89 years", "90-94 years", "95+ years")),
+    measure = factor(clean_measure(measure_name), levels = c("Prevalence", "Incidence", "Deaths", "DALYs")),
+    location_name = factor(location_name, levels = locations)
+  )
+age_pattern_plot <- ggplot(age_pattern_plot_data,
+  aes(x = age_name, y = rate_2023, color = location_name, group = location_name)) +
+  geom_line(linewidth = 0.45) + geom_point(size = 0.65) +
+  facet_wrap(~ measure, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = region_palette, labels = clean_location) +
+  scale_y_continuous(labels = comma) +
+  labs(x = "Age group", y = "Rate per 100,000") + paper_theme() +
+  theme(
+    axis.text.x = element_text(angle = 65, hjust = 1, size = 5),
+    legend.text = element_text(size = 7)
+  )
+print(age_pattern_plot)
+ggsave(file.path(figure_dir, "age_specific_rates_2023.png"),
+       age_pattern_plot, width = 7.2, height = 4.8, dpi = 300)
+```
+
+```{r drift-table, results='asis'}
+cat(format_pdf_table(
+  age_adjusted_drift %>%
+    filter(sex_name == "Both", cause_name == "Diabetes mellitus") %>%
+    transmute(
+      Region = clean_location(location_name), Measure = measure_name,
+      `Annual drift (%)` = annual_drift_pct,
+      `Lower 95%` = lower_95, `Upper 95%` = upper_95, `P value` = p_value
+    ),
+  "Age-adjusted annual drift in total diabetes incidence and mortality, 1990-2023",
+  digits = 3,
+  notes = c(
+    "Quasi-Poisson log-linear models include categorical age effects and GBD-implied population offsets.",
+    "These estimates quantify age-adjusted temporal drift; they are not presented as a fully identified age-period-cohort decomposition."
+  )
+))
+```
+
+\newpage
+
+# Population Reconstruction
+
+```{r reconstructed-population-table, results='asis'}
+reconstructed_population_summary <- age_population %>%
+  filter(year %in% c(1990, 2023), sex_name == "Both") %>%
+  group_by(location_name, year) %>%
+  summarise(population = sum(population), .groups = "drop") %>%
+  pivot_wider(names_from = year, values_from = population, names_prefix = "Population ") %>%
+  mutate(`Change (%)` = 100 * (`Population 2023` / `Population 1990` - 1)) %>%
+  transmute(Region = clean_location(location_name), across(everything()))
+cat(format_pdf_table(
+  reconstructed_population_summary,
+  "GBD-implied population reconstructed from matched age-specific counts and rates",
+  digits = 0,
+  notes = "Both-sex population totals are sums of the 25 mutually exclusive age groups."
+))
+```
+
+\newpage
+
+# Supplementary Output Catalogue
+
+```{r catalogue, results='asis'}
+catalogue <- tibble(
+  file = basename(list.files(table_dir, full.names = TRUE)),
+  directory = table_dir
+) %>%
+  arrange(file)
+cat(format_pdf_table(
+  catalogue,
+  "Machine-readable table catalogue",
+  digits = 0,
+  max_rows = 30,
+  notes = "CSV tables contain the full machine-readable outputs used to create the compact report tables."
+))
+```
+
+\newpage
+
+# Methods Notes
+
+This report uses GBD 2023 point estimates and uncertainty intervals for
+Sub-Saharan Africa and the four GBD subregions. Age-standardized rates are
+reported per 100,000 population. Full-period APC estimates come from
+log-linear models and are descriptive summaries of average annual change.
+Forecast intervals reflect model uncertainty only; GBD uncertainty in
+forecasts should be propagated later if draws become available. The symmetric
+decomposition averages effects across all factor orderings. Age-adjusted drift
+models use quasi-Poisson regression with categorical age effects and should not
+be interpreted as a fully identified age-period-cohort decomposition.

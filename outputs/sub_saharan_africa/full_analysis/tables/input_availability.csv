@@ -1,0 +1,6 @@
+input,file,status,enabled_analysis
+Age-standardized rates,/Users/christopherodoom/Desktop/Projects_mentor/Diabetes_paperSSA/data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_age_standardized_rates_1990_2023.csv,AVAILABLE,"Endpoints, trends, sex ratios, forecasts"
+All-age counts,/Users/christopherodoom/Desktop/Projects_mentor/Diabetes_paperSSA/data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_all_age_counts_1990_2023.csv,AVAILABLE,"Count endpoints, diabetes-type shares, YLL-to-YLD ratios"
+Age-specific counts,/Users/christopherodoom/Desktop/Projects_mentor/Diabetes_paperSSA/data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_age_specific_counts_1990_2023.csv,AVAILABLE,Age-specific count validation and readiness for decomposition
+Age-specific rates,/Users/christopherodoom/Desktop/Projects_mentor/Diabetes_paperSSA/data/raw/gbd_2023/sub_saharan_africa/ssa_and_subregions_age_specific_rates_1990_2023.csv,AVAILABLE,"GBD-consistent decomposition, rate-effect estimation, age-period-cohort analysis"
+UN WPP 2024 population,/Users/christopherodoom/Desktop/Projects_mentor/Diabetes_paperSSA/data/raw/un_wpp_2024/WPP2024_PopulationByAge5GroupSex_Medium.csv.gz,AVAILABLE,Demographic-only projections and population sensitivity analysis

@@ -1,0 +1,181 @@
+location_name,measure_name,cause_name,year,Male,Female,male_to_female_rate_ratio
+Central Sub-Saharan Africa,Prevalence,Diabetes mellitus,1990,5674.54793397136,4411.64833613247,1.2862647930242843
+Central Sub-Saharan Africa,Prevalence,Diabetes mellitus,2023,7095.81811792263,5461.86435405227,1.2991567819984575
+Central Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,1990,14.46609552197,14.52182124072,0.9961626219035296
+Central Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,2023,17.61681674687,17.60221293593,1.0008296576682236
+Central Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,1990,5660.08183844938,4397.12651489174,1.2872228759578308
+Central Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,2023,7078.20130117575,5444.26214111634,1.300121323644488
+Central Sub-Saharan Africa,Incidence,Diabetes mellitus,1990,280.65681935075,207.23717621529,1.3542783417353046
+Central Sub-Saharan Africa,Incidence,Diabetes mellitus,2023,328.18186223448,244.53690794191,1.3420545184632822
+Central Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,1990,0.55051640353,0.55213855448,0.9970620581793499
+Central Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,2023,0.70759655467,0.70035974726,1.0103329859237518
+Central Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,1990,280.10630294722,206.68503766081,1.3552326095655813
+Central Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,2023,327.4742656798,243.83654819464,1.3430073059367502
+Central Sub-Saharan Africa,Deaths,Diabetes mellitus,1990,39.8833309422754,22.3858399069663,1.7816320990423957
+Central Sub-Saharan Africa,Deaths,Diabetes mellitus,2023,48.1928844841263,23.4017128957168,2.0593742303772564
+Central Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,1990,1.25976872575277,0.57025381360314,2.2091368715150552
+Central Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,2023,0.852025374254288,0.378335729242424,2.252035185681183
+Central Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,1990,38.6235622165226,21.8155860933632,1.7704572341640075
+Central Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,2023,47.340859109872,23.0233771664743,2.0562082950544642
+Central Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,1990,1516.16777060973,930.901584755994,1.6287089800230008
+Central Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,2023,1804.4075803399,1034.2032205407,1.7447321227606731
+Central Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,1990,83.9498963518521,36.4455940597525,2.3034305933994754
+Central Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,2023,54.7213484294262,23.6799976375385,2.31086798516735
+Central Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,1990,1432.21787425787,894.455990696242,1.601216705075714
+Central Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,2023,1749.68623191048,1010.52322290316,1.7314656331041638
+Central Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,1990,994.760394168805,533.031670378658,1.8662313131640782
+Central Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,2023,1154.41093305682,541.998400496322,2.1299157562083137
+Central Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,1990,82.76046665975,35.2749539051327,2.3461537861204094
+Central Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,2023,53.3277270890749,22.2872177511927,2.392749408401193
+Central Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,1990,911.999927509055,497.756716473525,1.8322202339535143
+Central Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,2023,1101.08320596774,519.711182745129,2.1186444366114805
+Central Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,1990,521.40738999751,397.86992472195,1.31049711878045
+Central Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,2023,649.99666418299,492.20483284169,1.3205816375883723
+Central Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,1990,1.18942972303,1.17064018506,1.016050651779938
+Central Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,2023,1.39362137659,1.39277992256,1.0006041543364967
+Central Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,1990,520.21796027448,396.69928453689,1.3113660159024152
+Central Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,2023,648.60304280641,490.81205291914,1.3214896393615372
+Eastern Sub-Saharan Africa,Prevalence,Diabetes mellitus,1990,2911.99187226884,2534.16799165194,1.1490918841456161
+Eastern Sub-Saharan Africa,Prevalence,Diabetes mellitus,2023,3351.92909976125,2963.16391193016,1.131199352916611
+Eastern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,1990,23.33893648153,24.13115684556,0.9671702285514022
+Eastern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,2023,30.89062442955,31.86990386368,0.9692725952886849
+Eastern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,1990,2888.65293578731,2510.03683480638,1.1508408544969166
+Eastern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,2023,3321.0384753317,2931.29400806648,1.1329598689836986
+Eastern Sub-Saharan Africa,Incidence,Diabetes mellitus,1990,178.76538134048,140.13637448919,1.2756529629947706
+Eastern Sub-Saharan Africa,Incidence,Diabetes mellitus,2023,194.53919087484,154.8277927757,1.2564875297077323
+Eastern Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,1990,0.86880478848,0.89648867851,0.9691196434560537
+Eastern Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,2023,1.44172638635,1.461326067,0.9865877430830775
+Eastern Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,1990,177.896576552,139.23988581068,1.2776265616439837
+Eastern Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,2023,193.0974644885,153.3664667087,1.2590592235215536
+Eastern Sub-Saharan Africa,Deaths,Diabetes mellitus,1990,41.6348294331602,32.239005150734,1.2914427488843363
+Eastern Sub-Saharan Africa,Deaths,Diabetes mellitus,2023,44.5854961597982,29.045592984283,1.535017590583331
+Eastern Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,1990,1.38251650415232,0.870973118801425,1.5873239647795867
+Eastern Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,2023,0.798274832889983,0.431979006688149,1.8479482116737853
+Eastern Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,1990,40.2523129290079,31.3680320319326,1.2832272323629075
+Eastern Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,2023,43.7872213269082,28.6136139775948,1.5302932849095794
+Eastern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,1990,1318.43504415987,1014.80541565046,1.2991998503622415
+Eastern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,2023,1354.1530488981,935.799095992989,1.447055307807484
+Eastern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,1990,93.6788109987399,56.5222117589684,1.6573804896068287
+Eastern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,2023,52.4901422802836,28.2846996719454,1.8557786679399226
+Eastern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,1990,1224.75623316113,958.28320389149,1.2780733588854738
+Eastern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,2023,1301.66290661781,907.514396321045,1.434316537450641
+Eastern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,1990,1031.35317679737,770.180703799932,1.3391054485120963
+Eastern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,2023,1023.34540916647,649.455717058893,1.5756969756163874
+Eastern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,1990,91.6962817652852,54.4678054791136,1.6834950657310281
+Eastern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,2023,50.020999499755,25.7382918122064,1.9434467471548564
+Eastern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,1990,939.656895032089,715.712898320818,1.31289641032973
+Eastern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,2023,973.324409666719,623.717425246687,1.5605214320920386
+Eastern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,1990,287.08187482662,244.62471821076,1.1735603700492785
+Eastern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,2023,330.80764833262,286.34338637902,1.1552830065882669
+Eastern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,1990,1.982529285,2.05440633327,0.9650132268840929
+Eastern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,2023,2.46914284473,2.54640792595,0.9696572256029345
+Eastern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,1990,285.09934554162,242.5703118775,1.1753266231755415
+Eastern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,2023,328.33850548789,283.79697845307,1.1569485597683544
+Southern Sub-Saharan Africa,Prevalence,Diabetes mellitus,1990,5650.68463762042,4823.0332184321,1.1716039226156063
+Southern Sub-Saharan Africa,Prevalence,Diabetes mellitus,2023,7484.51498385429,5950.10843456881,1.2578787540023504
+Southern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,1990,14.72217987043,14.78846604738,0.9955177111177299
+Southern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,2023,17.0903505446,17.09064010828,0.9999830571776034
+Southern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,1990,5635.96245774999,4808.24475238471,1.172145501735277
+Southern Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,2023,7467.42463330968,5933.01779446053,1.2586216478706294
+Southern Sub-Saharan Africa,Incidence,Diabetes mellitus,1990,308.34836646181,271.4706064389,1.1358443940088596
+Southern Sub-Saharan Africa,Incidence,Diabetes mellitus,2023,395.44493202081,327.00422425762,1.2092960967662334
+Southern Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,1990,0.54957821101,0.55126170172,0.9969461134253527
+Southern Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,2023,0.67242120214,0.66703028342,1.0080819699704782
+Southern Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,1990,307.7987882508,270.91934473718,1.1361270216764954
+Southern Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,2023,394.77251081867,326.33719397421,1.2097073766279562
+Southern Sub-Saharan Africa,Deaths,Diabetes mellitus,1990,38.5112551424911,41.2956229974382,0.9325747463570212
+Southern Sub-Saharan Africa,Deaths,Diabetes mellitus,2023,68.8085012344362,59.0641128544862,1.1649798483210414
+Southern Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,1990,0.435582383301784,0.401694776568053,1.0843615817543246
+Southern Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,2023,0.435476972061947,0.360921924977531,1.2065683515598489
+Southern Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,1990,38.0756727591894,40.8939282208702,0.9310837675838023
+Southern Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,2023,68.3730242623743,58.7031909295087,1.164724151783797
+Southern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,1990,1406.24955541608,1378.29329015566,1.0202832484639484
+Southern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,2023,2230.6407623572,1836.58522624695,1.2145588075515013
+Southern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,1990,27.8058736537881,27.5002620029606,1.0111130450609742
+Southern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,2023,26.2392966656873,23.3779170811496,1.1223966863517076
+Southern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,1990,1378.4436817623,1350.7930281527,1.0204699410148823
+Southern Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,2023,2204.40146569151,1813.2073091658,1.2157470657371694
+Southern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,1990,868.882002391853,922.825332850338,0.9415454598630602
+Southern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,2023,1518.0544389802,1276.40910381584,1.189316524335308
+Southern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,1990,26.5940593539104,26.3035255038648,1.0110454338146766
+Southern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,2023,24.8692034225631,22.0168087524542,1.129555318492329
+Southern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,1990,842.287943037943,896.521807346474,0.93950636352165
+Southern Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,2023,1493.18523555764,1254.39229506338,1.1903654394514553
+Southern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,1990,537.36756699578,455.46796914748,1.1798141766183803
+Southern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,2023,712.58634190424,560.17613699569,1.2720755041904306
+Southern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,1990,1.21181433138,1.19673653021,1.0125990982888726
+Southern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,2023,1.37009327875,1.36110836408,1.0066011751210369
+Southern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,1990,536.1557526644,454.27123261727,1.1802546896385113
+Southern Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,2023,711.21624862549,558.8150286316,1.2727221212483906
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,1990,3802.41572913117,3313.33689146481,1.1476091486278477
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,2023,4896.91036726154,4194.5446490523,1.167447429214499
+Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,1990,16.761534032,16.95058052553,0.9888471965166462
+Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,2023,20.90959674807,20.87196860847,1.0018028074067116
+Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,1990,3785.65419509917,3296.38631093927,1.148425529658412
+Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,2023,4876.00077051347,4173.67268044383,1.1682757954068774
+Sub-Saharan Africa,Incidence,Diabetes mellitus,1990,209.53534850158,170.86852457705,1.2262957675806108
+Sub-Saharan Africa,Incidence,Diabetes mellitus,2023,250.19195515007,204.76570917122,1.2218449864614083
+Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,1990,0.6296680241,0.63340674579,0.9940974394181151
+Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,2023,0.90462855509,0.89420523508,1.0116565186615882
+Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,1990,208.90568047748,170.23511783127,1.2271597255540343
+Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,2023,249.28732659498,203.87150393613,1.222766898669066
+Sub-Saharan Africa,Deaths,Diabetes mellitus,1990,37.0245464345235,29.8211735429398,1.241552294419651
+Sub-Saharan Africa,Deaths,Diabetes mellitus,2023,46.5278880664557,31.4012910679641,1.481718951165161
+Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,1990,1.04694046686862,0.63668573761949,1.6443598544912206
+Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,2023,0.629745714540773,0.34952044607054,1.8017421344606492
+Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,1990,35.9776059676549,29.1844878053204,1.2327646867626747
+Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,2023,45.898142351915,31.0517706218936,1.4781167525292005
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,1990,1246.38350236976,991.861721873767,1.2566101452278704
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,2023,1514.90443309699,1066.50355725851,1.4204401127279054
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,1990,74.7206927371297,44.0973361186427,1.6944491280855531
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,2023,43.8928034089547,24.4440036854835,1.795647062310877
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,1990,1171.66280963263,947.764385755123,1.236238486318641
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,2023,1471.01162968804,1042.05955357303,1.4116387347001549
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,1990,890.953563774093,687.993128483187,1.295003579088604
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,2023,1058.40186123044,683.621931789528,1.5482268956173548
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,1990,73.3311932776066,42.6958308840128,1.7175258511028306
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,2023,42.2256603002601,22.7868057904992,1.8530750070229587
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,1990,817.622370496487,645.297297599174,1.2670475663518934
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,2023,1016.17620093018,660.835125999029,1.5377151742561475
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,1990,355.42994783684,303.86860129116,1.1696830351230498
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,2023,456.50258373561,382.8816354239,1.1922812208796643
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,1990,1.38949949565,1.40150527107,0.9914336566063472
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,2023,1.66714315204,1.65719793807,1.0060012227516903
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,1990,354.04044834119,302.46709602009,1.1705089677512375
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,2023,454.83544058357,381.22443748583,1.193090987511723
+Western Sub-Saharan Africa,Prevalence,Diabetes mellitus,1990,3604.70328069552,3159.64628033131,1.140856589908394
+Western Sub-Saharan Africa,Prevalence,Diabetes mellitus,2023,4941.32751813821,4301.48283433841,1.1487497936041888
+Western Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,1990,11.92688579808,11.4464045645,1.0419766076650978
+Western Sub-Saharan Africa,Prevalence,Diabetes mellitus type 1,2023,13.59237317649,12.95000428547,1.0496037589532494
+Western Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,1990,3592.77639489743,3148.19987576681,1.1412161033842663
+Western Sub-Saharan Africa,Prevalence,Diabetes mellitus type 2,2023,4927.73514496171,4288.53283005295,1.1490491830747784
+Western Sub-Saharan Africa,Incidence,Diabetes mellitus,1990,191.60417027454,153.92647019054,1.2447772630487801
+Western Sub-Saharan Africa,Incidence,Diabetes mellitus,2023,238.67347057764,199.41324207678,1.1968787433170744
+Western Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,1990,0.44103236285,0.42223486627,1.0445190534501712
+Western Sub-Saharan Africa,Incidence,Diabetes mellitus type 1,2023,0.52499067094,0.49720071309,1.0558928358676138
+Western Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,1990,191.16313791168,153.50423532428,1.245328101259519
+Western Sub-Saharan Africa,Incidence,Diabetes mellitus type 2,2023,238.1484799067,198.91604136368,1.1972311447284987
+Western Sub-Saharan Africa,Deaths,Diabetes mellitus,1990,31.7812117118618,24.9243965049255,1.2751045629362088
+Western Sub-Saharan Africa,Deaths,Diabetes mellitus,2023,41.0509483976969,25.2055080534137,1.6286499090081694
+Western Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,1990,0.828502815717811,0.495146139179843,1.673249067618982
+Western Sub-Saharan Africa,Deaths,Diabetes mellitus type 1,2023,0.424203811090465,0.257470596319462,1.6475815769041264
+Western Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,1990,30.952708896144,24.4292503657456,1.2670347404333584
+Western Sub-Saharan Africa,Deaths,Diabetes mellitus type 2,2023,40.6267445866064,24.9480374570942,1.6284545289975834
+Western Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,1990,1069.87414827556,835.299750339915,1.2808266108545918
+Western Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,2023,1361.28841351081,908.906894479522,1.4977204175465526
+Western Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,1990,65.7862295601028,38.4430670610448,1.7112638139833911
+Western Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 1,2023,34.4173983974396,20.9538886713713,1.6425303645171652
+Western Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,1990,1004.08791871546,796.856683278871,1.2600608613632793
+Western Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus type 2,2023,1326.87101511337,887.953005808151,1.4943031967167535
+Western Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,1990,745.92737107108,560.972143255587,1.3297048347928835
+Western Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,2023,918.553332854024,534.82311434867,1.7174899667017511
+Western Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,1990,64.8255976778575,37.529998215026,1.7273008462841621
+Western Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 1,2023,33.3328692462148,19.9318024245843,1.672345959294747
+Western Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,1990,681.101773393222,523.442145040561,1.301197811155317
+Western Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus type 2,2023,885.22046360781,514.891311924086,1.7192375227693182
+Western Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,1990,323.9467856271,274.32761421684,1.180875598513531
+Western Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,2023,442.7350921679,374.08378985703,1.1835185168999374
+Western Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,1990,0.96063190722,0.91306886976,1.0520914019032344
+Western Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 1,2023,1.08452917942,1.02208627336,1.061093576626096
+Western Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,1990,322.98615371987,273.41454534708,1.1813056738070113
+Western Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus type 2,2023,441.65056298847003,373.06170358366,1.1838539275029842

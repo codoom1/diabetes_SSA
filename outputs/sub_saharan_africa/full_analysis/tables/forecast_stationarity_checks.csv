@@ -1,0 +1,7 @@
+Measure,kpss_ndiffs,adf_ndiffs,pp_ndiffs,auto_arima_p,auto_arima_d,auto_arima_q,selected_arima
+DALYs,2,2,1,0,2,1,"ARIMA(0,2,1)"
+Deaths,2,2,1,0,2,1,"ARIMA(0,2,1)"
+Incidence,2,1,2,1,2,0,"ARIMA(1,2,0)"
+Prevalence,1,1,2,3,1,0,"ARIMA(3,1,0)"
+YLDs,1,1,2,0,1,3,"ARIMA(0,1,3)"
+YLLs,2,2,1,0,2,1,"ARIMA(0,2,1)"

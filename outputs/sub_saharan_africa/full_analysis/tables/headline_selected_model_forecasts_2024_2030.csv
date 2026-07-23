@@ -1,0 +1,43 @@
+location_name,measure_name,cause_name,sex_name,selected_model,year,forecast,lower_95,upper_95,interval_method
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,Both,LSTM,2024,1276.366773626854,1239.5282684988256,1281.9606129215904,LSTM validation-residual interval
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,Both,LSTM,2025,1277.189465514608,1225.0919519449994,1285.1003489109598,LSTM validation-residual interval
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,Both,LSTM,2026,1280.3131949982783,1216.5070324416465,1290.002008866137,LSTM validation-residual interval
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,Both,LSTM,2027,1284.0210138337588,1210.344003577702,1295.2086924232317,LSTM validation-residual interval
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,Both,LSTM,2028,1288.134946821935,1205.7615451661889,1300.6431517401752,LSTM validation-residual interval
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,Both,LSTM,2029,1292.23447807214,1201.998937621569,1305.9365300473744,LSTM validation-residual interval
+Sub-Saharan Africa,DALYs (Disability-Adjusted Life Years),Diabetes mellitus,Both,LSTM,2030,1296.4886962283954,1199.0231729882546,1311.288603876329,LSTM validation-residual interval
+Sub-Saharan Africa,Deaths,Diabetes mellitus,Both,LSTM,2024,38.08120226675239,36.3527602653139,38.28301519673071,LSTM validation-residual interval
+Sub-Saharan Africa,Deaths,Diabetes mellitus,Both,LSTM,2025,37.92443796789284,35.48005184768323,38.209844550530434,LSTM validation-residual interval
+Sub-Saharan Africa,Deaths,Diabetes mellitus,Both,LSTM,2026,37.89331548516721,34.8995661207397,38.242865733513995,LSTM validation-residual interval
+Sub-Saharan Africa,Deaths,Diabetes mellitus,Both,LSTM,2027,37.88742462046663,34.43054061758964,38.29105048042327,LSTM validation-residual interval
+Sub-Saharan Africa,Deaths,Diabetes mellitus,Both,LSTM,2028,37.899261372557255,34.03434756217499,38.35052880272718,LSTM validation-residual interval
+Sub-Saharan Africa,Deaths,Diabetes mellitus,Both,LSTM,2029,37.91251145097378,33.67871049745457,38.4068501529167,LSTM validation-residual interval
+Sub-Saharan Africa,Deaths,Diabetes mellitus,Both,LSTM,2030,37.94047396378529,33.36744627238029,38.47442078786521,LSTM validation-residual interval
+Sub-Saharan Africa,Incidence,Diabetes mellitus,Both,ARIMA,2024,227.53631600093303,226.9926021959799,228.08002980588614,ARIMA model prediction interval
+Sub-Saharan Africa,Incidence,Diabetes mellitus,Both,ARIMA,2025,229.04543131076215,227.6011278144983,230.489734807026,ARIMA model prediction interval
+Sub-Saharan Africa,Incidence,Diabetes mellitus,Both,ARIMA,2026,230.65327498790202,227.981354528796,233.32519544700804,ARIMA model prediction interval
+Sub-Saharan Africa,Incidence,Diabetes mellitus,Both,ARIMA,2027,232.30662773842985,228.1293160126808,236.48393946417892,ARIMA model prediction interval
+Sub-Saharan Africa,Incidence,Diabetes mellitus,Both,ARIMA,2028,233.9809580034963,228.05820030460404,239.90371570238858,ARIMA model prediction interval
+Sub-Saharan Africa,Incidence,Diabetes mellitus,Both,ARIMA,2029,235.66495790328517,227.78492000140238,243.54499580516796,ARIMA model prediction interval
+Sub-Saharan Africa,Incidence,Diabetes mellitus,Both,ARIMA,2030,237.35341504396848,227.32553690609276,247.3812931818442,ARIMA model prediction interval
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,Both,ARIMA,2024,4557.958452375947,4552.776330032233,4563.14057471966,ARIMA model prediction interval
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,Both,ARIMA,2025,4598.976635318651,4583.817154665771,4614.13611597153,ARIMA model prediction interval
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,Both,ARIMA,2026,4635.4465502909125,4608.471850540779,4662.421250041046,ARIMA model prediction interval
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,Both,ARIMA,2027,4663.74174320757,4626.526229276293,4700.957257138847,ARIMA model prediction interval
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,Both,ARIMA,2028,4687.02562253833,4642.575321570913,4731.475923505747,ARIMA model prediction interval
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,Both,ARIMA,2029,4711.335894565851,4662.002233124048,4760.669556007654,ARIMA model prediction interval
+Sub-Saharan Africa,Prevalence,Diabetes mellitus,Both,ARIMA,2030,4740.489916754899,4687.2024875589705,4793.777345950828,ARIMA model prediction interval
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,Both,ARIMA,2024,420.68744780192037,419.8949832005659,421.47991240327485,ARIMA model prediction interval
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,Both,ARIMA,2025,423.78664359532576,421.6833702034051,425.8899169872464,ARIMA model prediction interval
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,Both,ARIMA,2026,426.4958519733282,422.87981799760627,430.1118859490501,ARIMA model prediction interval
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,Both,ARIMA,2027,429.2052096077145,424.1708904746941,434.2395287407349,ARIMA model prediction interval
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,Both,ARIMA,2028,431.91456724210076,425.7816204338678,438.04751405033375,ARIMA model prediction interval
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,Both,ARIMA,2029,434.6239248764871,427.5612268104407,441.68662294253346,ARIMA model prediction interval
+Sub-Saharan Africa,YLDs (Years Lived with Disability),Diabetes mellitus,Both,ARIMA,2030,437.33328251087335,429.44973182659055,445.21683319515614,ARIMA model prediction interval
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,Both,LSTM,2024,853.728412443305,818.6527849317083,862.6633960983911,LSTM validation-residual interval
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,Both,LSTM,2025,849.0084240986735,799.4039959630265,861.6443991632781,LSTM validation-residual interval
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,Both,LSTM,2026,847.2192923419951,786.466523384549,862.6951379974016,LSTM validation-residual interval
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,Both,LSTM,2027,846.0265793522225,775.8753243290291,863.8965466623946,LSTM validation-residual interval
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,Both,LSTM,2028,845.3122565340506,766.8807690646586,865.2914873646724,LSTM validation-residual interval
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,Both,LSTM,2029,844.4739070200328,758.5565172086932,866.3600578351014,LSTM validation-residual interval
+Sub-Saharan Africa,YLLs (Years of Life Lost),Diabetes mellitus,Both,LSTM,2030,844.0073980860656,751.2060106108454,867.6471428058502,LSTM validation-residual interval
